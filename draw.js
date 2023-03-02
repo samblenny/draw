@@ -16,6 +16,12 @@ const EDIT_SELECT = document.getElementById("edit-select");
 /* HTML textarea element that serves as a text editor */
 const EDITOR = document.getElementById("editor");
 
+/* SVG canvas-size selection dropdown */
+const CANVAS_SIZE_SELECT = document.getElementById("canvas-size");
+
+/* HTML SVG element that serves as a canvas */
+const CANVAS_SVG = document.getElementById("canvas-svg");
+
 /* Source code for "Lots of Dots" example */
 const SRC_LotsOfDots = `
 # Lots of Dots
@@ -44,8 +50,8 @@ f
 const SRC_Fibonacci = `
 # Fibonacci Spiral
 : a dup F 90 L ;
-: b 2.2 * a a a a 90 ArcL ;
-410 SetX 371 SetY 90 SetH
+: b 2.1 * a a a a 90 ArcL ;
+364 SetX 321 SetY 90 SetH
 1 b
 1 b
 2 b
@@ -82,8 +88,8 @@ const SRC_Sierpinski = `
 : q p l o l p ;
 : s o r p r o ;
 
-5 SetX 550 SetY 0 SetH
-1.15 q r s r q
+5 SetX 468 SetY 0 SetH
+0.98 q r s r q
 `.trim();
 
 /* Previously selected editor box choice */
@@ -92,13 +98,19 @@ var PREV_SELECTED = EDIT_SELECT.value || "";
 /* Scratch buffer text */
 var SCRATCH_BUF = "";
 
+/* Size of SVG canvas (side of square in pixels) */
+var CANVAS_SIZE = 512;
+
+/* Zoom factor for SVG canvas */
+var CANVAS_ZOOM = 1;
+
 
 /*************/
 /* Init Code */
 /*************/
 
 /* Initialize interpreter */
-var di = drawInterpreter("id_svg_demo", 300, 300);
+var di = drawInterpreter("canvas_svg", 300, 300);
 
 /* Run the current code in the editor box */
 function evalCode(code) {
@@ -112,11 +124,8 @@ function setCode(code) {
 }
 
 /* Update editor text to match the dropdown selector */
-function updateCodeSelection(value) {
+function updateCodeSelection() {
     let choice = EDIT_SELECT.value || "";
-    console.log("choice", choice);
-    console.log("prev", PREV_SELECTED);
-    console.log("scratch", SCRATCH_BUF);
     if(PREV_SELECTED == "") {
         SCRATCH_BUF = EDITOR.value;
     }
@@ -136,11 +145,49 @@ function updateCodeSelection(value) {
     PREV_SELECTED = choice;
 }
 
+function setCanvasSizeAndZoom() {
+    const docRoot = document.documentElement;
+    const inner = CANVAS_SIZE;
+    const outer = inner * CANVAS_ZOOM;
+    docRoot.style.setProperty("--SVG_SIZE", outer);
+    CANVAS_SVG.setAttribute("width", outer);
+    CANVAS_SVG.setAttribute("height", outer);
+    CANVAS_SVG.setAttribute("viewBox", `0 0 ${inner} ${inner}`);
+}
+
+/* Update svg size to match the canvas-size dropdown selector */
+function updateCanvasSize() {
+    let choice = CANVAS_SIZE_SELECT.value || "";
+    switch(choice) {
+    case "64":
+        CANVAS_SIZE = 64;
+        CANVAS_ZOOM = 8;
+        break;
+    case "128":
+        CANVAS_SIZE = 128;
+        CANVAS_ZOOM = 4;
+        break;
+    case "256":
+        CANVAS_SIZE = 256;
+        CANVAS_ZOOM = 2;
+        break;
+    case "512":
+    default:
+        CANVAS_SIZE = 512;
+        CANVAS_ZOOM = 1;
+    }
+    setCanvasSizeAndZoom();
+}
+
+
 /* Register edit box code select handler */
 EDIT_SELECT.addEventListener("change", updateCodeSelection);
 
 /* Register editor box keystroke handler */
 EDITOR.addEventListener("input", () => { evalCode(EDITOR.value); });
+
+/* Register canvas size select handler */
+CANVAS_SIZE_SELECT.addEventListener("change", updateCanvasSize);
 
 /* Initialize the editor box with example code (index.html sets selection) */
 updateCodeSelection();
@@ -159,7 +206,7 @@ function drawInterpreter(svgID, initialX, initialY) {
     var logLimit;
     var userDict;
 
-    svgElement = document.getElementById(svgID);
+    svgElement = CANVAS_SVG;
     // The namespace matters! A plain createElement() won't work right.
     svgPath = document.createElementNS("http://www.w3.org/2000/svg","path");
     svgElement.appendChild(svgPath);

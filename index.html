@@ -10,10 +10,14 @@
 --CFG2:#6b6b6b;  /* fg 2 (lower emphasis) */
 --CA1:#bbb;      /* accent 1 */
 --CA2:#eee;      /* accent 2 (lower emphasis) */
+--SVG_SIZE:512px;  /* Size of SVG in px including pre-multiplied zoom factor */
+--EDIT_WIDE:400px; /* Width of editor textarea */
 }
 html,body,div,textarea,h1,p,svg{margin:0;padding:0;}
 *{box-sizing:border-box;}
-body,div,textarea,p,svg,td,code{color:inherit;background:inherit;}
+body,div,textarea,p,svg,table,tr,td,code{
+  color:inherit;background:inherit;font-size:inherit;
+}
 body{
   color:var(--CFG2);
   font-size:16px;
@@ -22,32 +26,45 @@ body{
   padding:13px;
 }
 h1{font-size:19px;font-weight:bold;margin:5px 2px 8px 0px;}
-textarea{font-family:inherit;font-size:inherit;font-weight:inherit;outline:none;}
 p{padding:0 3px 8px 3px;max-width:800px;}
-#edit-div{display:inline-block;font-size:14px;margin-top:35px;}
-#edit-div select{display:inline-block;margin:5px 0;}
-#edit-div textarea{display:block;}
-#edit-select{margin-top:45px;color:var(--CFG1);background:var(--CBG);}
-#editor,#id_svg_demo{
+select{
+  color:var(--CFG1);background:var(--CBG);
+  display:inline-block;margin:5px 0;
+}
+#gridA{grid-area:A;}
+#gridB{grid-area:B;}
+#gridC{grid-area:C;}
+#gridD{grid-area:D;}
+#grid-wrapper{
+  display:grid;
+  grid:". . . . ." 35px
+       ". A . C ." 30px
+       ". B . D ." 514px
+       ". . . . ." 20px / 10px 400px 10px 514px 1fr;
+}
+#editor{
+  outline:none;
+  resize:none;
+  font-family:"Courier New",monospace;
+  font-size:16px;
   border:1px solid var(--CA1);
   display:inline-block;
   background:var(--CBG);
   color:var(--CFG1);
-  margin-bottom:35px;
-}
-#editor{
-  font-family:"Courier New",monospace;
-  font-size:16px;
-  height:600px;
-  width:400px;
+  height:100%;
+  width:var(--EDIT_WIDE);
   padding:7px;
 }
-#id_svg_demo{
-  margin-left:16px;
-  width:600px;
-  height:600px;
-  stroke:var(--CFG1);
+#canvas-svg{
+  display:inline-block;
+  box-sizing:content-box; /* don't let border mess up content scaling */
+  margin:0;
+  border:1px solid var(--CA1);
+  color:var(--CFG1);
   background:var(--CBG);
+  width:var(--SVG_SIZE);
+  height:var(--SVG_SIZE);
+  stroke:var(--CFG1);
   stroke-width:1px;
   fill:none;
   stroke-linejoin:round;
@@ -84,7 +101,9 @@ As you type in the box on the left, the drawing will update on the right.
 Scroll down for language documentation.
 </p>
 
-<div id="edit-div">
+<div id="grid-wrapper">
+
+<div id="gridA">
  <label>buffer:
   <select id="edit-select">
    <option value="">--scratch--</option>
@@ -92,11 +111,26 @@ Scroll down for language documentation.
    <option value="Fibonacci">sample: Fibonacci</option>
    <option value="Sierpinski">sample: Sierpinski</option>
   </select>
-  <textarea id="editor" spellcheck="false" autofocus></textarea>
  </label>
 </div>
 
-<svg id="id_svg_demo" viewbox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+<div id="gridB">
+ <textarea id="editor" spellcheck="false" autofocus></textarea>
+</div>
+
+<div id="gridC">
+ <label>size, zoom:
+  <select id="canvas-size">
+   <option          value="64">64x64px, 8x</option>
+   <option          value="128">128x128px, 4x</option>
+   <option          value="256">256x256px, 2x</option>
+   <option selected value="512">512x512px, 1x</option>
+  </select>
+ </label>
+</div>
+
+<div id="gridD">
+ <svg id="canvas-svg" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <path class="grid" d="M100 0 L100 600" />
   <path class="grid" d="M200 0 L200 600" />
   <path class="grid" d="M300 0 L300 600" />
@@ -107,7 +141,10 @@ Scroll down for language documentation.
   <path class="grid" d="M0 300 L600 300" />
   <path class="grid" d="M0 400 L600 400" />
   <path class="grid" d="M0 500 L600 500" />
-</svg>
+ </svg>
+</div>
+
+</div>
 
 <h2>Language Intro</h2>
 
