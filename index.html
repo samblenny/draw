@@ -1,41 +1,43 @@
-<!DOCTYPE html><html><head><meta charset="utf-8">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <!-- Copyright (c) 2023 Sam Blenny -->
 <!-- SPDX-License-Identifier: MIT  -->
 <meta name="viewport" content="initial-scale=1.0, width=device-width">
 <title>draw</title>
 <style>
+:root{ /* Default to light theme */
+--CBG:#fff9f9;   /* bg */
+--CFG1:#000;     /* fg 1 */
+--CFG2:#6b6b6b;  /* fg 2 (lower emphasis) */
+--CA1:#bbb;      /* accent 1 */
+--CA2:#eee;      /* accent 2 (lower emphasis) */
+}
 html,body,div,textarea,h1,p,svg{margin:0;padding:0;}
 *{box-sizing:border-box;}
+body,div,textarea,p,svg,td,code{color:inherit;background:inherit;}
 body{
-  color:#000;
+  color:var(--CFG2);
   font-size:16px;
   font-family:Verdana,Arial,Helvetica,sans-serif;
-  background:#fff9f9;
+  background:var(--CBG);
   padding:13px;
 }
-h1{font-size:1.3rem;font-weight:bold;margin:5px 2px 10px 0px;}
+h1{font-size:19px;font-weight:bold;margin:5px 2px 8px 0px;}
 textarea{font-family:inherit;font-size:inherit;font-weight:inherit;outline:none;}
 p{padding:0 3px 8px 3px;max-width:800px;}
-button{
-  padding:7px 15px;
-  margin:15px 20px 10px 3px;
-  font-size:0.85rem;
-  border-radius:10px;
-  border:1px solid #aaa;
-  box-shadow:0 0 2px rgba(0,0,0,0.4);
-  background:#e9e9e9;
-  background:linear-gradient(#e9e9e9, #d7d7d7);
-}
-button:hover{
-  background:#f5f5f5;
-}
+#edit-div{display:inline-block;font-size:14px;margin-top:35px;}
+#edit-div select{display:inline-block;margin:5px 0;}
+#edit-div textarea{display:block;}
+#edit-select{margin-top:45px;color:var(--CFG1);background:var(--CBG);}
 #editor,#id_svg_demo{
-  border:1px solid #bbb;
+  border:1px solid var(--CA1);
   display:inline-block;
-  background:#fff;
+  background:var(--CBG);
+  color:var(--CFG1);
+  margin-bottom:35px;
 }
 #editor{
   font-family:"Courier New",monospace;
+  font-size:16px;
   height:600px;
   width:400px;
   padding:7px;
@@ -44,24 +46,32 @@ button:hover{
   margin-left:16px;
   width:600px;
   height:600px;
-  stroke:#000;
+  stroke:var(--CFG1);
+  background:var(--CBG);
   stroke-width:1px;
   fill:none;
   stroke-linejoin:round;
   stroke-linecap:round;
 }
-.grid{
-  stroke:#eee;
-}
-#builtin td{border:1px solid #bbb;padding:5px}
+.grid{stroke:var(--CA2);}
+#builtin td{border:1px solid var(--CA1);padding:5px}
 #builtin td:first-child{
   font-weight:bold;font-family:"Courier New",monospace;
-  text-align:right;padding-right:5px;background:#fff
+  text-align:right;padding-right:5px;background:var(--CBG);
 }
 code{
   font-weight:bold;font-family:"Courier New",monospace;
   display:inline-block;padding:0px 5px 0px 5px;
-  background:#fff;border:1px solid #bbb
+  background:var(--CBG);border:1px solid var(--CA1);
+}
+@media (prefers-color-scheme: dark) {
+:root{ /* Dark Theme */
+--CBG:#1e1e23;   /* bg */
+--CFG1:#eee;     /* fg 1 */
+--CFG2:#8a8a8a;  /* fg 2 (lower emphasis) */
+--CA1:#5a5a5a;   /* accent 1 */
+--CA2:#323232;   /* accent 2 (lower emphasis) */
+}
 }
 </style>
 </head><body>
@@ -70,17 +80,21 @@ code{
 
 <p>
 This is an interactive SVG vector drawing system inspired by Forth and Logo.
-As you type in the box on the left, your code will draw in the box on the right.
-Scroll down for an explanation of language syntax and built-in words.
+As you type in the box on the left, the drawing will update on the right.
+Scroll down for language documentation.
 </p>
 
-<p>
-<button id="button1" type="button">Lots of Dots</button>
-<button id="button2" type="button">Fibonacci Spiral</button>
-<button id="button3" type="button">Sierpinski Arrowhead</button>
-</p>
-
-<textarea id="editor" spellcheck="false" autofocus></textarea>
+<div id="edit-div">
+ <label>buffer:
+  <select id="edit-select">
+   <option value="">--scratch--</option>
+   <option selected value="LotsOfDots">sample: Lots of Dots</option>
+   <option value="Fibonacci">sample: Fibonacci</option>
+   <option value="Sierpinski">sample: Sierpinski</option>
+  </select>
+  <textarea id="editor" spellcheck="false" autofocus></textarea>
+ </label>
+</div>
 
 <svg id="id_svg_demo" viewbox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
   <path class="grid" d="M100 0 L100 600" />

@@ -10,10 +10,8 @@
 /* Constants & Global Variables */
 /********************************/
 
-/* HTML Buttons to switch between example code */
-const BUTTON1 = document.getElementById("button1");
-const BUTTON2 = document.getElementById("button2");
-const BUTTON3 = document.getElementById("button3");
+/* Editor box code selection dropdown */
+const EDIT_SELECT = document.getElementById("edit-select");
 
 /* HTML textarea element that serves as a text editor */
 const EDITOR = document.getElementById("editor");
@@ -63,7 +61,7 @@ const SRC_Fibonacci = `
 `.trim();
 
 /* Source code for "Sierpinski" example */
-var SRC_Sierpinski = `
+const SRC_Sierpinski = `
 # Sierpinski Arrowhead
 : l 60 L ;
 : r 60 R ;
@@ -88,6 +86,12 @@ var SRC_Sierpinski = `
 1.15 q r s r q
 `.trim();
 
+/* Previously selected editor box choice */
+var PREV_SELECTED = EDIT_SELECT.value || "";
+
+/* Scratch buffer text */
+var SCRATCH_BUF = "";
+
 
 /*************/
 /* Init Code */
@@ -107,16 +111,39 @@ function setCode(code) {
     di.run(EDITOR.value);
 }
 
-/* Register button click handlers */
-BUTTON1.addEventListener("click", () => { setCode(SRC_LotsOfDots); });
-BUTTON2.addEventListener("click", () => { setCode(SRC_Fibonacci);  });
-BUTTON3.addEventListener("click", () => { setCode(SRC_Sierpinski); });
+/* Update editor text to match the dropdown selector */
+function updateCodeSelection(value) {
+    let choice = EDIT_SELECT.value || "";
+    console.log("choice", choice);
+    console.log("prev", PREV_SELECTED);
+    console.log("scratch", SCRATCH_BUF);
+    if(PREV_SELECTED == "") {
+        SCRATCH_BUF = EDITOR.value;
+    }
+    switch(choice) {
+    case "LotsOfDots":
+        setCode(SRC_LotsOfDots);
+        break;
+    case "Fibonacci":
+        setCode(SRC_Fibonacci);
+        break;
+    case "Sierpinski":
+        setCode(SRC_Sierpinski);
+        break;
+    default:
+        setCode(SCRATCH_BUF);
+    }
+    PREV_SELECTED = choice;
+}
+
+/* Register edit box code select handler */
+EDIT_SELECT.addEventListener("change", updateCodeSelection);
 
 /* Register editor box keystroke handler */
 EDITOR.addEventListener("input", () => { evalCode(EDITOR.value); });
 
-/* Initialize the editor box with example code */
-setCode(SRC_LotsOfDots);
+/* Initialize the editor box with example code (index.html sets selection) */
+updateCodeSelection();
 
 
 /*************************************/
