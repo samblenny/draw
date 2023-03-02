@@ -159,6 +159,14 @@ function setCanvasSizeAndZoom() {
 function updateCanvasSize() {
     let choice = CANVAS_SIZE_SELECT.value || "";
     switch(choice) {
+    case "16":
+        CANVAS_SIZE = 16;
+        CANVAS_ZOOM = 16;
+        break;
+    case "32":
+        CANVAS_SIZE = 32;
+        CANVAS_ZOOM = 16;
+        break;
     case "64":
         CANVAS_SIZE = 64;
         CANVAS_ZOOM = 8;
