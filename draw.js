@@ -1,8 +1,128 @@
-// Copyright (c) 2022 Sam Blenny
-// SPDX-License-Identifier: MIT
-//
-// A vector drawing language interpreter inspired by Forth and Logo
-//
+/* Copyright (c) 2022 Sam Blenny */
+/* SPDX-License-Identifier: MIT  */
+/*
+ * A vector drawing language interpreter inspired by Forth and Logo
+ */
+"use strict";
+
+
+/********************************/
+/* Constants & Global Variables */
+/********************************/
+
+/* HTML Buttons to switch between example code */
+const BUTTON1 = document.getElementById("button1");
+const BUTTON2 = document.getElementById("button2");
+const BUTTON3 = document.getElementById("button3");
+
+/* HTML textarea element that serves as a text editor */
+const EDITOR = document.getElementById("editor");
+
+/* Source code for "Lots of Dots" example */
+const SRC_LotsOfDots = `
+# Lots of Dots
+
+: u 5 * ;
+: 2E 2 u E ;
+: 4E 4 u E ;
+: 4N 4 u N ;
+: rstX 50 SetX ;
+: rstY 200 SetY ;
+: rstH 0 SetH ;
+
+: dot 1 u 360 ArcL ;    # dot
+: a dot 4E 30 L ;       # dot + gap
+: b a a a a a ;         # 5 dots
+: c b 2E b 2E b 2E b ;  # 15 dots
+: d rstX 4N rstH ;      # move NW
+: e c d ;               # 1 row
+: f e e e e e ;         # 5 rows
+
+rstX rstY rstH
+f
+`.trim();
+
+/* Source code for "Fibonacci" example */
+const SRC_Fibonacci = `
+# Fibonacci Spiral
+: a dup F 90 L ;
+: b 2.2 * a a a a 90 ArcL ;
+410 SetX 371 SetY 90 SetH
+1 b
+1 b
+2 b
+3 b
+5 b
+8 b
+13 b
+21 b
+34 b
+55 b
+89 b
+144 b
+`.trim();
+
+/* Source code for "Sierpinski" example */
+var SRC_Sierpinski = `
+# Sierpinski Arrowhead
+: l 60 L ;
+: r 60 R ;
+: a r dup F l dup F l dup F r ;
+: b l dup F r dup F r dup F l ;
+: c r b l a l b r ;
+: d l a r b r a l ;
+: e r d l c l d r ;
+: g l c r d r c l ;
+: h g l e l g ;
+: i e r g r e ;
+: j i l h l i ;
+: k h r i r h ;
+: m k l j l k ;
+: n j r k r j ;
+: o n l m l n ;
+: p m r n r m ;
+: q p l o l p ;
+: s o r p r o ;
+
+5 SetX 550 SetY 0 SetH
+1.15 q r s r q
+`.trim();
+
+
+/*************/
+/* Init Code */
+/*************/
+
+/* Initialize interpreter */
+var di = drawInterpreter("id_svg_demo", 300, 300);
+
+/* Run the current code in the editor box */
+function evalCode(code) {
+    di.run(code || "");
+}
+
+/* Set the editor box's text contents */
+function setCode(code) {
+    EDITOR.value = code;
+    di.run(EDITOR.value);
+}
+
+/* Register button click handlers */
+BUTTON1.addEventListener("click", () => { setCode(SRC_LotsOfDots); });
+BUTTON2.addEventListener("click", () => { setCode(SRC_Fibonacci);  });
+BUTTON3.addEventListener("click", () => { setCode(SRC_Sierpinski); });
+
+/* Register editor box keystroke handler */
+EDITOR.addEventListener("input", () => { evalCode(EDITOR.value); });
+
+/* Initialize the editor box with example code */
+setCode(SRC_LotsOfDots);
+
+
+/*************************************/
+/* Utility Functions and Interpreter */
+/*************************************/
+
 function drawInterpreter(svgID, initialX, initialY) {
     var compileMode, compileName, compileWords, compileOkay;
     var onStack, stackTop, stackSecond, stackPointer, ringBuffer, ringBufferSize;
@@ -10,6 +130,7 @@ function drawInterpreter(svgID, initialX, initialY) {
     var newSubpath, traceOn, paths, currentPath;
     var svgElement, svgPath;
     var logLimit;
+    var userDict;
 
     svgElement = document.getElementById(svgID);
     // The namespace matters! A plain createElement() won't work right.
@@ -23,6 +144,7 @@ function drawInterpreter(svgID, initialX, initialY) {
         compileName = "";
         compileWords = [];
         compileOkay = false;
+        userDict = {};
     }
 
     // Circular data stack
@@ -459,7 +581,7 @@ function drawInterpreter(svgID, initialX, initialY) {
             resetStack();
             resetUserDict();
             // Process the input string in one pass
-            lines = inputString.split(/\r|\n/);
+            let lines = inputString.split(/\r|\n/);
             for(i=0; i<lines.length; i++) {
                 // Filter out comments and blank lines
                 beforeComment = lines[i].split("#")[0];
