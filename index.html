@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="initial-scale=1.0, width=device-width">
-<title>forthDraw</title>
-
-<!-- Copyright (c) 2022 Sam Blenny -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<!-- Copyright (c) 2023 Sam Blenny -->
 <!-- SPDX-License-Identifier: MIT  -->
-
+<meta name="viewport" content="initial-scale=1.0, width=device-width">
+<title>draw</title>
 <style>
 html,body,div,textarea,h1,p,svg{margin:0;padding:0;}
 *{box-sizing:border-box;}
@@ -48,7 +43,7 @@ button:hover{
 #text{
   font-family:"Courier New",monospace;
   height:600px;
-  width:350px;
+  width:400px;
   padding:7px;
 }
 #id_svg_demo{
@@ -75,32 +70,26 @@ code{
   background:#fff;border:1px solid #bbb
 }
 </style>
-
-
-<script src="./forthDraw.js"></script>
-
+<script src="./draw.js"></script>
 </head>
 <body>
-
-<noscript>
-  <div>Please enable javascript</div>
-</noscript>
-
-
-<h1>ForthDraw</h1>
+<noscript><div>Please enable javascript</div></noscript>
+<h1>Draw</h1>
 
 <p>
-  This is an interactive drawing system with Forth code style and turtle graphics.
-  As you type in the box on the left, your code will draw in the box on the right.
-  Scroll down for an explanation of language syntax and built-in words.
+This is an interactive SVG vector drawing system inspired by Forth and Logo.
+As you type in the box on the left, your code will draw in the box on the right.
+Scroll down for an explanation of language syntax and built-in words.
 </p>
 
 <p>
-  <button type="button" onclick="setFDCode(fibonacci)">Fibonacci Spiral</button>
-  <button type="button" onclick="setFDCode(sierpinski)">Sierpinski Arrowhead</button>
+<button type="button" onclick="setCode(lotsOfDots)">Lots of Dots</button>
+<button type="button" onclick="setCode(fibonacci)">Fibonacci Spiral</button>
+<button type="button" onclick="setCode(sierpinski)">Sierpinski Arrowhead</button>
 </p>
 
-<textarea id="text" autofocus oninput="evalFD(this.value)"></textarea>
+<textarea id="text" spellcheck="false" autofocus oninput="evalCode(this.value)">
+</textarea>
 
 <svg id="id_svg_demo" viewbox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
   <path class="grid" d="M100 0 L100 600" />
@@ -117,96 +106,121 @@ code{
 
 
 <script>
-  var fibonacci="" +
-    "\\ Fibonacci Spiral\n" +
-    ": a dup F 90 L ;\n" +
-    ": b 2.2 * a a a a 90 arcL ;\n" +
-    "410 371 setYX 90 setH\n" +
-    "1 b\n" +
-    "1 b\n" +
-    "2 b\n" +
-    "3 b\n" +
-    "5 b\n" +
-    "8 b\n" +
-    "13 b\n" +
-    "21 b\n" +
-    "34 b\n" +
-    "55 b\n" +
-    "89 b\n" +
-    "144 b\n";
+var lotsOfDots=`
+# Lots of Dots
 
-  var sierpinski="" +
-    "\\ Sierpinski Arrowhead\n"+
-    ": l 60 L ;\n" +
-    ": r 60 R ;\n" +
-    ": a r dup F l dup F l dup F r ;\n" +
-    ": b l dup F r dup F r dup F l ;\n" +
-    ": c r b l a l b r ;\n" +
-    ": d l a r b r a l ;\n" +
-    ": e r d l c l d r ;\n" +
-    ": g l c r d r c l ;\n" +
-    ": h g l e l g ;\n" +
-    ": i e r g r e ;\n" +
-    ": j i l h l i ;\n" +
-    ": k h r i r h ;\n" +
-    ": m k l j l k ;\n" +
-    ": n j r k r j ;\n" +
-    ": o n l m l n ;\n" +
-    ": p m r n r m ;\n" +
-    ": q p l o l p ;\n" +
-    ": s o r p r o ;\n" +
-    "\n" +
-    "5 550 setYX 0 setH\n" +
-    "1.15 q r s r q\n";
+: u 5 * ;
+: 2E 2 u E ;
+: 4E 4 u E ;
+: 4N 4 u N ;
+: rstX 50 SetX ;
+: rstY 200 SetY ;
+: rstH 0 SetH ;
 
-  var fd = forthDrawInterpreter("id_svg_demo", 300, 300);
+: dot 1 u 360 ArcL ;    # dot
+: a dot 4E 30 L ;       # dot + gap
+: b a a a a a ;         # 5 dots
+: c b 2E b 2E b 2E b ;  # 15 dots
+: d rstX 4N rstH ;      # move NW
+: e c d ;               # 1 row
+: f e e e e e ;         # 5 rows
 
-  function evalFD(code) {
+rstX rstY rstH
+f
+`.trim();
+
+var fibonacci=`
+# Fibonacci Spiral
+: a dup F 90 L ;
+: b 2.2 * a a a a 90 ArcL ;
+410 SetX 371 SetY 90 SetH
+1 b
+1 b
+2 b
+3 b
+5 b
+8 b
+13 b
+21 b
+34 b
+55 b
+89 b
+144 b
+`.trim();
+
+var sierpinski=`
+# Sierpinski Arrowhead
+: l 60 L ;
+: r 60 R ;
+: a r dup F l dup F l dup F r ;
+: b l dup F r dup F r dup F l ;
+: c r b l a l b r ;
+: d l a r b r a l ;
+: e r d l c l d r ;
+: g l c r d r c l ;
+: h g l e l g ;
+: i e r g r e ;
+: j i l h l i ;
+: k h r i r h ;
+: m k l j l k ;
+: n j r k r j ;
+: o n l m l n ;
+: p m r n r m ;
+: q p l o l p ;
+: s o r p r o ;
+
+5 SetX 550 SetY 0 SetH
+1.15 q r s r q
+`.trim();
+
+  var di = drawInterpreter("id_svg_demo", 300, 300);
+
+  function evalCode(code) {
     if(code!==undefined) {
-      fd.run(code.toString());
+      di.run(code.toString());
     } else {
-      fd.run("");
+      di.run("");
     }
   }
 
-  function setFDCode(code) {
-    var fdCode = document.getElementById("text");
-    fdCode.value = code;
-    fd.run(fdCode.value);
+  function setCode(code) {
+    var x = document.getElementById("text");
+    x.value = code;
+    di.run(x.value);
   }
 
-  setFDCode(fibonacci);
+  setCode(lotsOfDots);
 </script>
 
 <h2>Language Intro</h2>
 
-<p>Forth is many things to many people, but in this case, Forth
-means basic RPN calculator functionality, the ability to define
-&quot;words&quot; representing re-usable shapes, unit conversions, etc., and
-the ability to fit very concise code next to a live preview image.</p>
+<p>This drawing language has basic RPN calculator functionality, the ability to
+define Forth-like &quot;words&quot; representing re-usable shapes, unit
+conversions, etc., and the ability to fit very concise code next to a live
+preview image.</p>
 
-<p>ForthDraw is case sensitive, and it uses postfix notation with a stack.
-As with other Forth dialects, things like <code>:</code>, <code>3.14</code>,
-<code>+</code>, <code>penDown</code>, <code>;</code>, and
-<code>draw-window</code> are &quot;words&quot;. Words must be separated by
-spaces. Comments start with <code>\</code> and continue until the end of the
-line. Word definitions look like <code>: word ... ;</code>. To add 1 and 1,
-you say <code>1 1 +</code>. To go 2 units forward, you could say
-<code>2 F</code>, <code>1 1 + F</code>, or <code>: two 1 1 + ; two F</code>.
+<p>This language is case sensitive, and it uses postfix notation with a stack.
+In the tradition of Forth-like languages, things like <code>:</code>,
+<code>3.14</code>, <code>+</code>, <code>;</code>, and <code>foo</code> are
+&quot;words&quot;. Words must be separated by spaces. Comments start with
+<code>#</code> and continue until the end of the line. Word definitions look
+like <code>: word ... ;</code>. To add 1 and 1, you say <code>1 1 +</code>. To
+go 2 units forward, you could say <code>2 F</code>, <code>1 1 + F</code>, or
+<code>: two 1 1 + ; two F</code>.
 </p>
 
-<p>The following table shows the built-in words with a short
-explanation for each. Some words, like <code>traceOn</code>, don't change the
-stack. Other words pop 1 or 2 operands off of the stack, and some also push 1
-or 2 results back onto the stack.  In the descriptions for words which pop
-operands, <b>T</b> is the number which was on <em>top</em> of the stack, and
-<b>S</b> is the number which was <em>second</em> on the stack.
+<p>The following table shows the built-in words with a short explanation for
+each. Some words, like <code>TRON</code>, don't change the stack. Other words
+pop 1 or 2 operands off of the stack. Some words push 1 result back onto the
+stack.  In the descriptions for words which pop operands, <b>T</b> is the
+number which was on <em>top</em> of the stack, and <b>S</b> is the number which
+was <em>second</em> on the stack.
 </p>
 <br />
 
 <table id="builtin">
 <tr>
-  <td>\</td> <td>The rest of the line is a comment</td>
+  <td>#</td> <td>The rest of the line is a comment</td>
 </tr><tr>
   <td>:</td> <td>Start defining the word whose name follows ":"</td>
 </tr><tr>
@@ -222,48 +236,51 @@ operands, <b>T</b> is the number which was on <em>top</em> of the stack, and
 </tr><tr>
   <td>drop</td> <td>Discard <b>T</b> (pop 1)</td>
 </tr><tr>
-  <td>swap</td> <td>Swap <b>T</b> with <b>S</b> (pop 2, push 2)</td>
+  <td>swap</td> <td>Swap <b>T</b> with <b>S</b></td>
 </tr><tr>
   <td>over</td> <td>Push a copy of <b>S</b> (push 1)</td>
 </tr><tr>
   <td>F</td> <td>Move turtle forward <b>T</b> units (pop 1)</td>
 </tr><tr>
+  <td>B</td> <td>Move turtle backward <b>T</b> units (pop 1)</td>
+</tr><tr>
   <td>L</td> <td>Turn turtle left <b>T</b> degrees (pop 1)</td>
 </tr><tr>
   <td>R</td> <td>Turn turtle right <b>T</b> degrees (pop 1)</td>
 </tr><tr>
-  <td>arcL</td>
+  <td>N</td> <td>Move turtle North <b>T</b> units with pen up (pop 1)</td>
+</tr><tr>
+  <td>S</td> <td>Move turtle South <b>T</b> units with pen up (pop 1)</td>
+</tr><tr>
+  <td>E</td> <td>Move turtle East <b>T</b> units with pen up (pop 1)</td>
+</tr><tr>
+  <td>W</td> <td>Move turtle West <b>T</b> units with pen up (pop 1)</td>
+</tr><tr>
+  <td>ArcL</td>
   <td>Draw a circular arc with radius <b>S</b> units and length <b>T</b>
       degrees, curving to the left (pop 2)
   </td>
 </tr><tr>
-  <td>arcR</td>
+  <td>ArcR</td>
   <td>Draw a circular arc with radius <b>S</b> units and length <b>T</b>
       degrees, curving to the right (pop 2)
   </td>
 </tr><tr>
-  <td>mark</td>
-  <td>Remember the turtle's position as position number <b>T</b> (pop 1)</td>
+  <td>Dot</td> <td>Draw a dot of radius <b>T</b> (pop 1)</td>
 </tr><tr>
-  <td>gotoMark</td> <td>Take turtle back to position <b>T</b> (pop 1)</td>
+  <td>PD</td> <td>Pen down (make lines when moving, default=down)</td>
 </tr><tr>
-  <td>markTemp</td> <td>Remember the turtle's position as <em>temp</em></td>
+  <td>PU</td> <td>Pen up (move without making lines, default=down)</td>
 </tr><tr>
-  <td>gotoTemp</td> <td>Take turtle back to the <em>temp</em> position</td>
+  <td>SetH</td> <td>Turtle heading = <b>T</b> degrees (pop 1)</td>
 </tr><tr>
-  <td>home</td> <td>Move turtle to its home position</td>
+  <td>SetX</td> <td>Turtle X coordinate = <b>T</b> (pop 1)</td>
 </tr><tr>
-  <td>penUp</td> <td>Lift the turtle's pen to move without making lines</td>
+  <td>SetX</td> <td>Turtle Y coordinate = <b>T</b> (pop 1)</td>
 </tr><tr>
-  <td>penDown</td> <td>Lower the turtle's pen to move and make lines</td>
+  <td>TROFF</td> <td>Turn debug tracing off (default=off)</td>
 </tr><tr>
-  <td>scale</td> <td>Set canvas scaling factor to <b>T</b> (pop 1)</td>
-</tr><tr>
-  <td>stroke</td> <td>Set width of the pen stroke to <b>T</b> (pop 1)</td>
-</tr><tr>
-  <td>traceOn</td> <td>Start debug tracing to the console log</td>
-</tr><tr>
-  <td>traceOff</td> <td>Stop debug tracing</td>
+  <td>TRON</td> <td>Turn debug tracing to console log on (default=off)</td>
 </tr><tr>
   <td>NOP</td> <td>Do nothing, can be useful while tracing the stack</td>
 </tr>

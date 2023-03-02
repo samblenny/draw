@@ -1,13 +1,13 @@
 // Copyright (c) 2022 Sam Blenny
 // SPDX-License-Identifier: MIT
 //
-// ForthDraw virtual machine and interpreter
+// A vector drawing language interpreter inspired by Forth and Logo
 //
-function forthDrawInterpreter(svgID, initialX, initialY) {
+function drawInterpreter(svgID, initialX, initialY) {
     var compileMode, compileName, compileWords, compileOkay;
     var onStack, stackTop, stackSecond, stackPointer, ringBuffer, ringBufferSize;
     var x, y, h, penDown;
-    var newSubpath, traceOn, marks, temp, paths, currentPath;
+    var newSubpath, traceOn, paths, currentPath;
     var svgElement, svgPath;
     var logLimit;
 
@@ -71,8 +71,6 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         penDown = true;
         newSubpath = true;
         traceOn = false;
-        marks = {};
-        temp = [0,0,0];
         paths = [];
         currentPath = [];
     }
@@ -81,15 +79,17 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
     // Dictionaries
     // =====================================================================
     var builtinDict = {
-        "setYX": function() {
-            y = stackTop;
-            dPop();
-            x = stackTop;
-            dPop();
+        ":": function() {
+            compileMode=true;
+            compileName="";
+            compileWords=[];
+            compileOkay=true;
         },
-        "setH": function() {
-            h = stackTop;
-            dPop();
+        ";": function() {
+            compileMode=false;
+            if(compileOkay){
+                userDict[compileName]=compileWords;
+            }
         },
         "+": function() {
             var n = stackSecond+stackTop;
@@ -120,18 +120,21 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         "over": function() {
             dPush(stackSecond);
         },
-        "penUp": function() {
-            penDown = false;
+        "F": function() {
+            var dx = stackTop*Math.cos(Math.PI/180*h);
+            var dy = stackTop*Math.sin(Math.PI/180*h);
+            line(x,y,x+dx,y+dy);
+            x = x+dx;
+            y = y+dy;
+            dPop();
         },
-        "penDown": function() {
-            penDown = true;
-            newSubpath = true;
-        },
-        "traceOn": function() {
-            traceOn = true;
-        },
-        "traceOff": function() {
-            traceOn = false;
+        "B": function() {
+            var dx = stackTop*Math.cos(Math.PI/180*(h+180));
+            var dy = stackTop*Math.sin(Math.PI/180*(h+180));
+            line(x,y,x+dx,y+dy);
+            x = x+dx;
+            y = y+dy;
+            dPop();
         },
         "L": function() {
             h = (360+((h-stackTop)%360))%360;
@@ -141,65 +144,69 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
             h = (h+stackTop)%360;
             dPop();
         },
-        "F": function() {
-            var dx = stackTop*Math.cos(Math.PI/180*h);
-            var dy = stackTop*Math.sin(Math.PI/180*h);
-            line(x,y,x+dx,y+dy);
-            x = x+dx;
-            y = y+dy;
+        "N": function() {
+            newSubpath = true;
+            y -= stackTop;
             dPop();
         },
-        "arcL": function() {
+        "S": function() {
+            newSubpath = true;
+            y += stackTop;
+            dPop();
+        },
+        "E": function() {
+            newSubpath = true;
+            x += stackTop;
+            dPop();
+        },
+        "W": function() {
+            newSubpath = true;
+            x -= stackTop;
+            dPop();
+        },
+        "ArcL": function() {
             var angle = stackTop;
             var radius = stackSecond;
             dPop();
             dPop();
             arc(-angle,radius);
         },
-        "arcR": function() {
+        "ArcR": function() {
             var angle = stackTop;
             var radius = stackSecond;
             dPop();
             dPop();
             arc(angle,radius);
         },
-        "mark": function() {
-            marks[stackTop] = [x,y,h];
+        "Dot": function() {
+            var radius = stackTop;
+            dPop();
+            dot(radius);
+        },
+        "PD": function() {
+            penDown = true;
+            newSubpath = true;
+        },
+        "PU": function() {
+            penDown = false;
+        },
+        "SetH": function() {
+            h = stackTop;
             dPop();
         },
-        "gotoMark": function() {
-            var m = marks[stackTop];
+        "SetX": function() {
+            x = stackTop;
             dPop();
-            if(m!==undefined) {
-                x = m[0];
-                y = m[1];
-                h = m[2];
-                newSubpath = true;
-            } else {
-                log("can't find mark: "+stackTop);
-                dPop();
-            }
         },
-        "markTemp": function() {
-            temp=[x,y,h];
+        "SetY": function() {
+            y = stackTop;
+            dPop();
         },
-        "gotoTemp": function() {
-                x=temp[0];
-                y=temp[1];
-                h=temp[2];
-                newSubpath=true;
-            },
-        ":": function() {
-            compileMode=true;
-            compileName="";
-            compileWords=[];
-            compileOkay=true;
+        "TRON": function() {
+            traceOn = true;
         },
-        ";": function() {
-            compileMode=false;
-            if(compileOkay){
-                userDict[compileName]=compileWords;
-            }
+        "TROFF": function() {
+            traceOn = false;
         },
         "NOP": function() {
             /* sometimes useful for stack tracing */
@@ -254,6 +261,10 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         line(x,y,x+dx,y+dy);
         x += dx;
         y += dy;
+    }
+
+    function dot(radius) {
+        // TODO: implement this
     }
 
     function arc(angle,radius) {
@@ -339,7 +350,7 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         showAll(s);
     }
 
-    // During interactive editing, simple errors in a complex forthDraw program
+    // During interactive editing, simple errors in a complex draw program
     // can potentially generate thousands of log messages in a very short time.
     // Dumping all of that to the console log could make the browser's UI thread
     // unresponsive, so we cap how many log messages can get sent to the console.
@@ -374,7 +385,7 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         var maxDepth=30;
         callDepth=(callDepth===undefined)?0:callDepth;
         if(compileMode) {
-            if(w=="\\" || w==";") {
+            if(w==";") {
                 builtinDict[w]();
             } else if(compileName=="") {
                 compileName=w;
@@ -397,7 +408,7 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
         } else {
             if(callDepth>=maxDepth) {
                 log("call stack too deep: "+w);
-            } else if(w==":" || w=="\\") {
+            } else if(w==":") {
                 builtinDict[w]();
             } else {
                 if(traceOn) {
@@ -427,9 +438,9 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
 
     return {
 
-        // Entry point for the forthDraw "Interpreter".
+        // Entry point for the draw "Interpreter".
         //
-        // The point of forthDraw is to make it fun and easy for me to draw
+        // The point of draw is to make it fun and easy for me to draw
         // vector graphics, and I've ignored a variety of conventions which
         // don't support that goal (e.g. REPL). Interpreter gets quotes
         // because this parser is meant to evaluate a whole program at once,
@@ -451,7 +462,7 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
             lines = inputString.split(/\r|\n/);
             for(i=0; i<lines.length; i++) {
                 // Filter out comments and blank lines
-                beforeComment = lines[i].split("\\")[0];
+                beforeComment = lines[i].split("#")[0];
                 if(beforeComment!="") {
                     words = beforeComment.trim().split(/\t| /);
                     for(j=0; j<words.length; j++) {
@@ -474,7 +485,7 @@ function forthDrawInterpreter(svgID, initialX, initialY) {
 // Further explanation about logging and the log limit...
 //
 //
-// ForthDraw takes a best-effort approach to evaluating all of its input. If it
+// Draw takes a best-effort approach to evaluating all of its input. If it
 // encounters a word it doesn't recognize, it will log a warning and attempt to
 // continue. It's possible to create a cascade of error messages by partially
 // breaking a chain of dependencies. An easy way to do that would be deciding to
