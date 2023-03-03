@@ -1,0 +1,16 @@
+#!/bin/sh
+# Copyright (c) 2023 Sam Blenny
+# SPDX-License-Identifier: MIT
+#
+# This starts an HTTP dev server with logging disabled.
+#
+# Usage (from shell prompt):
+#   start server in foreground:     ./webserver [Enter]
+#   move server to background job:  [Ctrl-Z] bg [Enter]
+#   start server in background:     ./webserver & [Enter]
+#   stop background job:            fg [Enter] [Ctrl-C]
+#
+echo 'Starting HTTP dev server (root = current directory) on localhost:8000'
+echo 'HTTP request logging is disabled'
+echo 'python3 -m http.server --bind 127.0.0.1  2>/dev/null >/dev/null'
+python3 -m http.server --bind 127.0.0.1  2>/dev/null >/dev/null
