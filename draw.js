@@ -46,6 +46,24 @@ rstX rstY rstH
 f
 `.trim();
 
+/* Source code for "Arcs Test" example */
+const SRC_ArcsTest = `
+# Arcs Test (try size=128x128)
+: u 7 * ;
+: a PU 64 dup SetY over + SetX PD ;
+: b a 270 SetH swap ArcL ;
+: c PU 64 dup SetY over + SetX PD ;
+: d c 90 SetH swap ArcR ;
+: e over over b 0.5 u + d ;
+45 8 u e
+90 2 u e
+135 6 u e
+180 4 u e
+225 5 u e
+270 3 u e
+315 7 u e
+360 1 u e`.trim();
+
 /* Source code for "Fibonacci" example */
 const SRC_Fibonacci = `
 # Fibonacci Spiral
@@ -133,6 +151,9 @@ function updateCodeSelection() {
     case "LotsOfDots":
         setCode(SRC_LotsOfDots);
         break;
+    case "ArcsTest":
+        setCode(SRC_ArcsTest);
+        break;
     case "Fibonacci":
         setCode(SRC_Fibonacci);
         break;
@@ -209,7 +230,7 @@ function drawInterpreter(svgID, initialX, initialY) {
     var compileMode, compileName, compileWords, compileOkay;
     var onStack, stackTop, stackSecond, stackPointer, ringBuffer, ringBufferSize;
     var x, y, h, penDown;
-    var newSubpath, traceOn, paths, currentPath;
+    var newSubpath, traceOn, paths;
     var svgElement, svgPath;
     var logLimit;
     var userDict;
@@ -276,7 +297,6 @@ function drawInterpreter(svgID, initialX, initialY) {
         newSubpath = true;
         traceOn = false;
         paths = [];
-        currentPath = [];
     }
 
 
@@ -425,37 +445,18 @@ function drawInterpreter(svgID, initialX, initialY) {
     // Draw lines
     // =====================================================================
     function preparePath() {
-        var d, pathX, pathY, i, j;
-        // Compute the path, including subpaths
-        d = "";
-        pathX = 0;
-        pathY = 0;
-        for(i=0; i<paths.length; i++) {
-            for(j=0; j+1<paths[i].length; j+=2) {
-                pathX = paths[i][j];
-                pathY = paths[i][j+1];
-                if(j==0) {
-                    d += "M"+pathX.toFixed(1)+" "+pathY.toFixed(1)+"\n";
-                } else {
-                    d += "L"+pathX.toFixed(1)+" "+pathY.toFixed(1)+"\n";
-                }
-            }
-        }
-        svgPath.setAttribute("d",d);
+        svgPath.setAttribute("d", paths.join("\n"));
         paths = [];
-        currentPath = [];
     }
 
     function line(x1,y1,x2,y2) {
         // This is the inner loop workhorse for adding line segments
         if(penDown) {
             if(newSubpath) {
-                currentPath = [x1, y1];
-                paths.push(currentPath);
+                paths.push(`M ${x1.toFixed(2)},${y1.toFixed(2)}`);
                 newSubpath = false;
             }
-            currentPath.push(x2);
-            currentPath.push(y2);
+            paths.push(`L ${x2.toFixed(2)}, ${y2.toFixed(2)}`);
         }
     }
 
@@ -471,31 +472,44 @@ function drawInterpreter(svgID, initialX, initialY) {
         // TODO: implement this
     }
 
-    function arc(angle,radius) {
-        // Approximate a circular arc with multiple short line segments
-        var i;
-        var fraction = angle%3.0;
-        var halfChord = Math.sin(Math.PI/360*fraction)*radius;
-        if(Math.abs(fraction)>0) {
-            makeLine(halfChord);
-            h += fraction;
-            makeLine(halfChord);
+    // Draw a circular arc segment (SVG path d="... A ...")
+    function arc(angle, radius) {
+        if(angle == 0) {
+            return;
         }
-        angle = Math.round(angle-fraction);
-        halfChord = Math.sin(Math.PI/360*3)*radius;
-        if(angle>0) {
-            for(i=0; i<angle/3; i++) {
-                makeLine(halfChord);
-                h += 3;
-                makeLine(halfChord);
-            }
-        } else if(angle<0) {
-            for(i=0; angle/3<i; i--) {
-                makeLine(halfChord);
-                h -= 3;
-                makeLine(halfChord);
-            }
+        let left = (angle < 0);
+        if(angle % 360 == 0) {
+            // Arcs of exactly 360 degrees don't work, so split them up.
+            let a = left ? -180 : 180;
+            arc(a, radius);
+            arc(a, radius);
+            return;
         }
+        // Calculate heading from pen position to to center of circular arc
+        let centerH = left ? (h + 270) % 360 : (h + 90) % 360;
+        // Calculate center point of circular arc
+        const dToR = Math.PI / 180;
+        let centerX = x + (radius * Math.cos(dToR * centerH));
+        let centerY = y + (radius * Math.sin(dToR * centerH));
+        // Calculate end point of circular arc
+        let endH = (180 + centerH + angle) % 360;
+        let x2 = centerX + (radius * Math.cos(dToR * endH));
+        let y2 = centerY + (radius * Math.sin(dToR * endH));
+        // Generate the SVG path segment
+        if(penDown) {
+            if(newSubpath) {
+                paths.push(`M ${x.toFixed(2)},${y.toFixed(2)}`);
+                newSubpath = false;
+            }
+            let r = radius.toFixed(1);
+            let largeArc = (Math.abs(angle) > 180) ? "1" : "0";
+            let sweep = left ? "0" : "1";
+            let endPoint = `${x2.toFixed(2)},${y2.toFixed(2)}`;
+            paths.push(`A ${r} ${r} 0 ${largeArc} ${sweep} ${endPoint}`);
+        }
+        x = x2;
+        y = y2;
+        h += angle;
     };
 
 
