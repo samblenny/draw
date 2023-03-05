@@ -5,7 +5,7 @@
   --CFG1:#000;     /* fg 1 */
   --CFG2:#6b6b6b;  /* fg 2 (lower emphasis) */
   --CA1:#bbb;      /* accent 1 */
-  --CA2:#eee;      /* accent 2 (lower emphasis) */
+  --CA2:#e7e7e7;   /* accent 2 (lower emphasis) */
   --SVG_SIZE:512px;  /* Size of SVG including pre-multiplied zoom factor */
   --EDIT_WIDE:400px; /* Width of editor textarea */
 }
