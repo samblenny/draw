@@ -46,21 +46,46 @@ Scroll down for language documentation.</p>
 </div>
 
 <div id="gridD">
- <svg id="canvas-svg" viewbox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <path class="grid" d="M100 0 L100 600" />
-  <path class="grid" d="M200 0 L200 600" />
-  <path class="grid" d="M300 0 L300 600" />
-  <path class="grid" d="M400 0 L400 600" />
-  <path class="grid" d="M500 0 L500 600" />
-  <path class="grid" d="M0 100 L600 100" />
-  <path class="grid" d="M0 200 L600 200" />
-  <path class="grid" d="M0 300 L600 300" />
-  <path class="grid" d="M0 400 L600 400" />
-  <path class="grid" d="M0 500 L600 500" />
- </svg>
+<svg id="canvas-svg" viewbox="-256 -256 512 512" xmlns="http://www.w3.org/2000/svg">
+  <path class="grid" d="M -256  192  L 255  192" />
+  <path class="grid" d="M -256  128  L 255  128" />
+  <path class="grid" d="M -256   64  L 255   64" />
+  <path class="grid" d="M -256    0  L 255    0" />
+  <path class="grid" d="M -256  -64  L 255  -64" />
+  <path class="grid" d="M -256 -128  L 255 -128" />
+  <path class="grid" d="M -256 -192  L 255 -192" />
+
+  <path class="grid" d="M -192 255  L -192 -256" />
+  <path class="grid" d="M -128 255  L -128 -256" />
+  <path class="grid" d="M  -64 255  L  -64 -256" />
+  <path class="grid" d="M    0 255  L    0 -256" />
+  <path class="grid" d="M   64 255  L   64 -256" />
+  <path class="grid" d="M  128 255  L  128 -256" />
+  <path class="grid" d="M  192 255  L  192 -256" />
+</svg>
 </div>
 
 </div>
+
+
+<h2>Coordinates and Motion</h2>
+
+<p>Coordinate system is the four-quadrant Cartesian plane, in the typical style
+of an algebra or trigonometry textbook. Compass directions use the Northern
+Hemisphere map convention.</p>
+<ul>
+<li>Origin (0,0) is in the center</li>
+<li>Unit for angles is degrees (°)</li>
+<li>+y from origin is Up, North, or heading 90°</li>
+<li>-y from origin is Down, South, or heading 270°</li>
+<li>-x from origin is Left, West, or heading 180°</li>
+<li>+x from origin is Right, East, heading 0°, or heading 360°</li>
+<li>Turn Left means add degrees to current heading, modulo 360°</li>
+<li>Turn Right means subtract degrees from current heading, modulo 360°</li>
+<li>Forward means move in direction of current heading</li>
+<li>Backward means move in direction of 180° from current heading</li>
+</ul>
+
 
 <h2>Language Intro</h2>
 

@@ -30,8 +30,8 @@ const SRC_LotsOfDots = `
 : 2E 2 u E ;
 : 4E 4 u E ;
 : 4N 4 u N ;
-: rstX 50 X= ;
-: rstY 200 Y= ;
+: rstX -206 X= ;
+: rstY 40 Y= ;
 : rstH 0 H= ;
 
 : dot 1 u 360 ArcL ;    # dot
@@ -50,10 +50,10 @@ f
 const SRC_ArcsTest = `
 # Arcs Test (try size=128x128)
 : u 7 * ;
-: a PU 64 dup Y= over + X= PD ;
-: b a 270 H= swap ArcL ;
-: c PU 64 dup Y= over + X= PD ;
-: d c 90 H= swap ArcR ;
+: a PU 0 dup Y= over + X= PD ;
+: b a 90 H= swap ArcL ;
+: c PU 0 dup Y= over + X= PD ;
+: d c 270 H= swap ArcR ;
 : e over over b 0.5 u + d ;
 45 8 u e
 90 2 u e
@@ -67,9 +67,9 @@ const SRC_ArcsTest = `
 /* Source code for "Fibonacci" example */
 const SRC_Fibonacci = `
 # Fibonacci Spiral
-: a dup F 90 L ;
-: b 2.1 * a a a a 90 ArcL ;
-364 X= 321 Y= 90 H=
+: a dup F 90 R ;
+: b 2.1 * a a a a 90 ArcR ;
+108 X= 65 Y= 90 H=
 1 b
 1 b
 2 b
@@ -106,7 +106,7 @@ const SRC_Sierpinski = `
 : q p l o l p ;
 : s o r p r o ;
 
-5 X= 468 Y= 0 H=
+-251 X= -212 Y= 0 H=
 0.98 q r s r q
 `.trim();
 
@@ -128,7 +128,7 @@ var CANVAS_ZOOM = 1;
 /*************/
 
 /* Initialize interpreter */
-var di = drawInterpreter("canvas_svg", 300, 300);
+var di = drawInterpreter("canvas_svg");
 
 /* Run the current code in the editor box */
 function evalCode(code) {
@@ -168,12 +168,16 @@ function updateCodeSelection() {
 
 function setCanvasSizeAndZoom() {
     const docRoot = document.documentElement;
-    const inner = CANVAS_SIZE;
-    const outer = inner * CANVAS_ZOOM;
+    const minx = -(CANVAS_SIZE / 2);
+    const miny = minx;
+    const width = CANVAS_SIZE;
+    const height = width;
+    const viewBox = `${minx} ${miny} ${width} ${height}`;
+    const outer = CANVAS_SIZE * CANVAS_ZOOM;
     docRoot.style.setProperty("--SVG_SIZE", outer);
     CANVAS_SVG.setAttribute("width", outer);
     CANVAS_SVG.setAttribute("height", outer);
-    CANVAS_SVG.setAttribute("viewBox", `0 0 ${inner} ${inner}`);
+    CANVAS_SVG.setAttribute("viewBox", viewBox);
 }
 
 /* Update svg size to match the canvas-size dropdown selector */
@@ -226,7 +230,7 @@ updateCodeSelection();
 /* Utility Functions and Interpreter */
 /*************************************/
 
-function drawInterpreter(svgID, initialX, initialY) {
+function drawInterpreter(svgID) {
     var compileMode, compileName, compileWords, compileOkay;
     var onStack, stackTop, stackSecond, stackPointer, ringBuffer, ringBufferSize;
     var x, y, h, penDown;
@@ -290,9 +294,9 @@ function drawInterpreter(svgID, initialX, initialY) {
     // Turtle & canvas state
     // =====================================================================
     function resetTurtleAndCanvas() {
-        x = initialX ? initialX : 0;
-        y = initialY ? initialY : 0;
-        h = 270;
+        x = 0;
+        y = 0;
+        h = 90;
         penDown = true;
         newSubpath = true;
         traceOn = false;
@@ -346,7 +350,7 @@ function drawInterpreter(svgID, initialX, initialY) {
         },
         "F": function() {
             var dx = stackTop*Math.cos(Math.PI/180*h);
-            var dy = stackTop*Math.sin(Math.PI/180*h);
+            var dy = -1 * stackTop*Math.sin(Math.PI/180*h);
             line(x,y,x+dx,y+dy);
             x = x+dx;
             y = y+dy;
@@ -354,18 +358,18 @@ function drawInterpreter(svgID, initialX, initialY) {
         },
         "B": function() {
             var dx = stackTop*Math.cos(Math.PI/180*(h+180));
-            var dy = stackTop*Math.sin(Math.PI/180*(h+180));
+            var dy = -1 * stackTop*Math.sin(Math.PI/180*(h+180));
             line(x,y,x+dx,y+dy);
             x = x+dx;
             y = y+dy;
             dPop();
         },
         "L": function() {
-            h = (360+((h-stackTop)%360))%360;
+            h = (h + stackTop) % 360;
             dPop();
         },
         "R": function() {
-            h = (h+stackTop)%360;
+            h = (360 + h - stackTop) % 360;
             dPop();
         },
         "N": function() {
@@ -393,14 +397,14 @@ function drawInterpreter(svgID, initialX, initialY) {
             var radius = stackSecond;
             dPop();
             dPop();
-            arc(-angle,radius);
+            arc(angle,radius);
         },
         "ArcR": function() {
             var angle = stackTop;
             var radius = stackSecond;
             dPop();
             dPop();
-            arc(angle,radius);
+            arc(-angle,radius);
         },
         "Dot": function() {
             var radius = stackTop;
@@ -423,7 +427,7 @@ function drawInterpreter(svgID, initialX, initialY) {
             dPop();
         },
         "Y=": function() {
-            y = stackTop;
+            y = -stackTop;
             dPop();
         },
         "TRON": function() {
@@ -460,14 +464,6 @@ function drawInterpreter(svgID, initialX, initialY) {
         }
     }
 
-    function makeLine(r) {
-        var dx = r*Math.cos(Math.PI/180*h);
-        var dy = r*Math.sin(Math.PI/180*h);
-        line(x,y,x+dx,y+dy);
-        x += dx;
-        y += dy;
-    }
-
     function dot(radius) {
         // TODO: implement this
     }
@@ -477,24 +473,26 @@ function drawInterpreter(svgID, initialX, initialY) {
         if(angle == 0) {
             return;
         }
-        let left = (angle < 0);
+        const left = (angle > 0);
         if(angle % 360 == 0) {
-            // Arcs of exactly 360 degrees don't work, so split them up.
-            let a = left ? -180 : 180;
+            // SVG path element seemst to not like arcs of exactly 360 degrees,
+            // so split those into two 180 degree arcs.
+            const a = left ? 180 : -180;
             arc(a, radius);
             arc(a, radius);
             return;
         }
-        // Calculate heading from pen position to to center of circular arc
-        let centerH = left ? (h + 270) % 360 : (h + 90) % 360;
+        // Calculate bearing from pen (turtle) to to center of circular arc
+        const centerBearing = left ? (h + 90) % 360 : (h + 270) % 360;
         // Calculate center point of circular arc
         const dToR = Math.PI / 180;
-        let centerX = x + (radius * Math.cos(dToR * centerH));
-        let centerY = y + (radius * Math.sin(dToR * centerH));
+        const centerX = x + (radius * Math.cos(dToR * centerBearing));
+        const centerY = y - (radius * Math.sin(dToR * centerBearing));
+        // Calculate bearing from center point to end point of circular arc
+        const endBearing = (180 + centerBearing + angle) % 360;
         // Calculate end point of circular arc
-        let endH = (180 + centerH + angle) % 360;
-        let x2 = centerX + (radius * Math.cos(dToR * endH));
-        let y2 = centerY + (radius * Math.sin(dToR * endH));
+        const endX = centerX + (radius * Math.cos(dToR * endBearing));
+        const endY = centerY - (radius * Math.sin(dToR * endBearing));
         // Generate the SVG path segment
         if(penDown) {
             if(newSubpath) {
@@ -504,11 +502,11 @@ function drawInterpreter(svgID, initialX, initialY) {
             let r = radius.toFixed(1);
             let largeArc = (Math.abs(angle) > 180) ? "1" : "0";
             let sweep = left ? "0" : "1";
-            let endPoint = `${x2.toFixed(2)},${y2.toFixed(2)}`;
+            let endPoint = `${endX.toFixed(2)},${endY.toFixed(2)}`;
             paths.push(`A ${r} ${r} 0 ${largeArc} ${sweep} ${endPoint}`);
         }
-        x = x2;
-        y = y2;
+        x = endX;
+        y = endY;
         h += angle;
     };
 

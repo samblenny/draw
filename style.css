@@ -32,6 +32,8 @@ p{
   padding:0 3px 8px 3px;
   max-width:800px;
 }
+ul{margin:0;}
+li{margin-bottom: 3px;}
 select{
   color:var(--CFG1);
   background:var(--CBG);
