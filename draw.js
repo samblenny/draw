@@ -1,5 +1,5 @@
 /* Copyright (c) 2022 Sam Blenny */
-/* SPDX-License-Identifier: MIT  */
+/* SPDX-License-Identifier: CC-BY-NC-SA-4.0 */
 /*
  * A vector drawing language interpreter inspired by Forth and Logo
  */
