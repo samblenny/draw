@@ -2,104 +2,17 @@
 <!-- Copyright (c) 2023 Sam Blenny -->
 <!-- SPDX-License-Identifier: MIT  -->
 <meta name="viewport" content="initial-scale=1.0, width=device-width">
+<link rel="preload" href="style.css" as="style">
+<link rel="modulepreload" href="draw.js">
 <title>draw</title>
-<style>
-:root{ /* Default to light theme */
---CBG:#fff9f9;   /* bg */
---CFG1:#000;     /* fg 1 */
---CFG2:#6b6b6b;  /* fg 2 (lower emphasis) */
---CA1:#bbb;      /* accent 1 */
---CA2:#eee;      /* accent 2 (lower emphasis) */
---SVG_SIZE:512px;  /* Size of SVG in px including pre-multiplied zoom factor */
---EDIT_WIDE:400px; /* Width of editor textarea */
-}
-html,body,div,textarea,h1,p,svg{margin:0;padding:0;}
-*{box-sizing:border-box;}
-body,div,textarea,p,svg,table,tr,td,code{
-  color:inherit;background:inherit;font-size:inherit;
-}
-body{
-  color:var(--CFG2);
-  font-size:16px;
-  font-family:Verdana,Arial,Helvetica,sans-serif;
-  background:var(--CBG);
-  padding:13px;
-}
-h1{font-size:19px;font-weight:bold;margin:5px 2px 8px 0px;}
-p{padding:0 3px 8px 3px;max-width:800px;}
-select{
-  color:var(--CFG1);background:var(--CBG);
-  display:inline-block;margin:5px 0;
-}
-#gridA{grid-area:A;}
-#gridB{grid-area:B;}
-#gridC{grid-area:C;}
-#gridD{grid-area:D;}
-#grid-wrapper{
-  display:grid;
-  grid:". . . . ." 35px
-       ". A . C ." 30px
-       ". B . D ." 514px
-       ". . . . ." 20px / 10px 400px 10px 514px 1fr;
-}
-#editor{
-  outline:none;
-  resize:none;
-  font-family:"Courier New",monospace;
-  font-size:16px;
-  border:1px solid var(--CA1);
-  display:inline-block;
-  background:var(--CBG);
-  color:var(--CFG1);
-  height:100%;
-  width:var(--EDIT_WIDE);
-  padding:7px;
-}
-#canvas-svg{
-  display:inline-block;
-  box-sizing:content-box; /* don't let border mess up content scaling */
-  margin:0;
-  border:1px solid var(--CA1);
-  color:var(--CFG1);
-  background:var(--CBG);
-  width:var(--SVG_SIZE);
-  height:var(--SVG_SIZE);
-  stroke:var(--CFG1);
-  stroke-width:1px;
-  fill:none;
-  stroke-linejoin:round;
-  stroke-linecap:round;
-}
-.grid{stroke:var(--CA2);}
-#builtin td{border:1px solid var(--CA1);padding:5px}
-#builtin td:first-child{
-  font-weight:bold;font-family:"Courier New",monospace;
-  text-align:right;padding-right:5px;background:var(--CBG);
-}
-code{
-  font-weight:bold;font-family:"Courier New",monospace;
-  display:inline-block;padding:0px 5px 0px 5px;
-  background:var(--CBG);border:1px solid var(--CA1);
-}
-@media (prefers-color-scheme: dark) {
-:root{ /* Dark Theme */
---CBG:#1e1e23;   /* bg */
---CFG1:#eee;     /* fg 1 */
---CFG2:#8a8a8a;  /* fg 2 (lower emphasis) */
---CA1:#5a5a5a;   /* accent 1 */
---CA2:#323232;   /* accent 2 (lower emphasis) */
-}
-}
-</style>
-</head><body>
-
+<link href="style.css" rel="stylesheet">
+</head>
+<body>
 <h1>Draw</h1>
 
-<p>
-This is an interactive SVG vector drawing system inspired by Forth and Logo.
+<p>This is an interactive SVG vector drawing system inspired by Forth and Logo.
 As you type in the box on the left, the drawing will update on the right.
-Scroll down for language documentation.
-</p>
+Scroll down for language documentation.</p>
 
 <div id="grid-wrapper">
 
@@ -163,17 +76,16 @@ In the tradition of Forth-like languages, things like <code>:</code>,
 <code>#</code> and continue until the end of the line. Word definitions look
 like <code>: word ... ;</code>. To add 1 and 1, you say <code>1 1 +</code>. To
 go 2 units forward, you could say <code>2 F</code>, <code>1 1 + F</code>, or
-<code>: two 1 1 + ; two F</code>.
-</p>
+<code>: two 1 1 + ; two F</code>.</p>
 
 <p>The following table shows the built-in words with a short explanation for
 each. Some words, like <code>TRON</code>, don't change the stack. Other words
 pop 1 or 2 operands off of the stack. Some words push 1 result back onto the
 stack.  In the descriptions for words which pop operands, <b>T</b> is the
 number which was on <em>top</em> of the stack, and <b>S</b> is the number which
-was <em>second</em> on the stack.
-</p>
-<br />
+was <em>second</em> on the stack.</p>
+
+<br>
 
 <table id="builtin">
 <tr>
@@ -242,10 +154,8 @@ was <em>second</em> on the stack.
   <td>NOP</td> <td>Do nothing, can be useful while tracing the stack</td>
 </tr>
 </table>
-<br />
 
+<br>
 <script type="module" src="draw.js"></script>
-
 </body>
 </html>
-

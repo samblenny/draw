@@ -1,0 +1,110 @@
+/* Copyright (c) 2023 Sam Blenny */
+/* SPDX-License-Identifier: MIT  */
+:root{ /* Default to light theme */
+  --CBG:#fff9f9;   /* bg */
+  --CFG1:#000;     /* fg 1 */
+  --CFG2:#6b6b6b;  /* fg 2 (lower emphasis) */
+  --CA1:#bbb;      /* accent 1 */
+  --CA2:#eee;      /* accent 2 (lower emphasis) */
+  --SVG_SIZE:512px;  /* Size of SVG including pre-multiplied zoom factor */
+  --EDIT_WIDE:400px; /* Width of editor textarea */
+}
+html,body,div,textarea,h1,p,svg{ margin:0; padding:0; }
+*{ box-sizing:border-box; }
+body,div,textarea,p,svg,table,tr,td,code{
+  color:inherit;
+  background:inherit;
+  font-size:inherit;
+}
+body{
+  color:var(--CFG2);
+  background:var(--CBG);
+  font-size:16px;
+  font-family:Verdana,Helvetica,sans-serif;
+  padding:13px;
+}
+h1{
+  font-size:19px;
+  font-weight:bold;
+  margin:5px 2px 8px 0px;
+}
+p{
+  padding:0 3px 8px 3px;
+  max-width:800px;
+}
+select{
+  color:var(--CFG1);
+  background:var(--CBG);
+  display:inline-block;
+  margin:5px 0;
+}
+#gridA{ grid-area:A; }
+#gridB{ grid-area:B; }
+#gridC{ grid-area:C; }
+#gridD{ grid-area:D; }
+#grid-wrapper{
+  display:grid;
+  grid:". . . . ." 35px
+       ". A . C ." 30px
+       ". B . D ." 514px
+       ". . . . ." 20px / 10px 400px 10px 514px 1fr;
+}
+#editor{
+  outline:none;
+  resize:none;
+  font-size:16px;
+  font-family:monospace;
+  border:1px solid var(--CA1);
+  display:inline-block;
+  color:var(--CFG1);
+  background:var(--CBG);
+  height:100%;
+  width:var(--EDIT_WIDE);
+  padding:7px;
+}
+#canvas-svg{
+  display:inline-block;
+  box-sizing:content-box; /* don't let border mess up content scaling */
+  margin:0;
+  border:1px solid var(--CA1);
+  color:var(--CFG1);
+  background:var(--CBG);
+  width:var(--SVG_SIZE);
+  height:var(--SVG_SIZE);
+  stroke:var(--CFG1);
+  stroke-width:1px;
+  fill:none;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+}
+.grid{
+  stroke:var(--CA2);
+}
+#builtin td{
+  border:1px solid var(--CA1);
+  padding:5px;
+}
+#builtin td:first-child{
+  font-weight:bold;
+  font-family:monospace;
+  text-align:right;
+  padding-right:5px;
+  background:var(--CBG);
+}
+code{
+  font-weight:bold;
+  font-family:monospace;
+  display:inline-block;
+  padding:0px 5px 0px 5px;
+  background:var(--CBG);
+  border:1px solid var(--CA1);
+}
+@media (prefers-color-scheme: dark) {
+  :root{ /* Dark Theme */
+    --CBG:#1e1e23;   /* bg */
+    --CFG1:#eee;     /* fg 1 */
+    --CFG2:#8a8a8a;  /* fg 2 (lower emphasis) */
+    --CA1:#5a5a5a;   /* accent 1 */
+    --CA2:#323232;   /* accent 2 (lower emphasis) */
+  }
+}
