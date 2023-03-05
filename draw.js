@@ -22,6 +22,12 @@ const CANVAS_SIZE_SELECT = document.getElementById("canvas-size");
 /* HTML SVG element that serves as a canvas */
 const CANVAS_SVG = document.getElementById("canvas-svg");
 
+/* Button to download SVG (actually an <a>, but style is like button) */
+const DOWNLOAD_TXT = document.getElementById("download-txt");
+
+/* Button to download SVG (actually an <a>, but style is like button) */
+const DOWNLOAD_SVG = document.getElementById("download-svg");
+
 /* Source code for "Lots of Dots" example */
 const SRC_LotsOfDots = `
 # Lots of Dots
@@ -31,7 +37,7 @@ const SRC_LotsOfDots = `
 : 4E 4 u E ;
 : 4N 4 u N ;
 : rstX -206 X= ;
-: rstY 40 Y= ;
+: rstY -40 Y= ;
 : rstH 0 H= ;
 
 : dot 1 u 360 ArcL ;    # dot
@@ -141,6 +147,20 @@ function setCode(code) {
     di.run(EDITOR.value);
 }
 
+/* Refresh the dataURL href for the .svg download button */
+function updateSvgDownloadButton() {
+    let mime = "image/svg+xml";
+    let data = `data:${mime},${encodeURIComponent(CANVAS_SVG.outerHTML)}`;
+    DOWNLOAD_SVG.setAttribute("href", data);
+}
+
+/* Refresh the dataURL href for the .txt download button */
+function updateTxtDownloadButton() {
+    let mime = "text/plain";
+    let data = `data:${mime},${encodeURIComponent(EDITOR.value)}`;
+    DOWNLOAD_TXT.setAttribute("href", data);
+}
+
 /* Update editor text to match the dropdown selector */
 function updateCodeSelection() {
     let choice = EDIT_SELECT.value || "";
@@ -164,13 +184,16 @@ function updateCodeSelection() {
         setCode(SCRATCH_BUF);
     }
     PREV_SELECTED = choice;
+    // Refresh the .txt download button data with the new source code
+    updateTxtDownloadButton();
 }
 
 function setCanvasSizeAndZoom() {
+    const scaleFactor = 10;  // SVG coordinates use n.1 fixed point
     const docRoot = document.documentElement;
-    const minx = -(CANVAS_SIZE / 2);
+    const minx = -(CANVAS_SIZE * scaleFactor / 2);
     const miny = minx;
-    const width = CANVAS_SIZE;
+    const width = CANVAS_SIZE * scaleFactor;
     const height = width;
     const viewBox = `${minx} ${miny} ${width} ${height}`;
     const outer = CANVAS_SIZE * CANVAS_ZOOM;
@@ -178,6 +201,8 @@ function setCanvasSizeAndZoom() {
     CANVAS_SVG.setAttribute("width", outer);
     CANVAS_SVG.setAttribute("height", outer);
     CANVAS_SVG.setAttribute("viewBox", viewBox);
+    // Refresh the .svg download button data with the new viewBox
+    updateSvgDownloadButton();
 }
 
 /* Update svg size to match the canvas-size dropdown selector */
@@ -212,7 +237,6 @@ function updateCanvasSize() {
     setCanvasSizeAndZoom();
 }
 
-
 /* Register edit box code select handler */
 EDIT_SELECT.addEventListener("change", updateCodeSelection);
 
@@ -224,6 +248,9 @@ CANVAS_SIZE_SELECT.addEventListener("change", updateCanvasSize);
 
 /* Initialize the editor box with example code (index.html sets selection) */
 updateCodeSelection();
+
+/* Set the SVG vewBox */
+setCanvasSizeAndZoom();
 
 
 /*************************************/
@@ -451,16 +478,24 @@ function drawInterpreter(svgID) {
     function preparePath() {
         svgPath.setAttribute("d", paths.join("\n"));
         paths = [];
+        // Refresh the .svg download button data with the new path data
+        updateSvgDownloadButton();
+    }
+
+    // Scale coordinate to svg n.1 fixed point (e.g. 3.1 becomes 31)
+    // This makes svg code smaller by omitting lots and lots of '.' characters
+    function scale(n) {
+        return Math.round(n * 10);
     }
 
     function line(x1,y1,x2,y2) {
         // This is the inner loop workhorse for adding line segments
         if(penDown) {
             if(newSubpath) {
-                paths.push(`M ${x1.toFixed(2)},${y1.toFixed(2)}`);
+                paths.push(`M${scale(x1)},${scale(y1)}`);
                 newSubpath = false;
             }
-            paths.push(`L ${x2.toFixed(2)}, ${y2.toFixed(2)}`);
+            paths.push(`L${scale(x2)},${scale(y2)}`);
         }
     }
 
@@ -496,14 +531,14 @@ function drawInterpreter(svgID) {
         // Generate the SVG path segment
         if(penDown) {
             if(newSubpath) {
-                paths.push(`M ${x.toFixed(2)},${y.toFixed(2)}`);
+                paths.push(`M${scale(x)},${scale(y)}`);
                 newSubpath = false;
             }
-            let r = radius.toFixed(1);
+            let r = scale(radius);
             let largeArc = (Math.abs(angle) > 180) ? "1" : "0";
             let sweep = left ? "0" : "1";
-            let endPoint = `${endX.toFixed(2)},${endY.toFixed(2)}`;
-            paths.push(`A ${r} ${r} 0 ${largeArc} ${sweep} ${endPoint}`);
+            let endPoint = `${scale(endX)},${scale(endY)}`;
+            paths.push(`A${r} ${r} 0 ${largeArc} ${sweep} ${endPoint}`);
         }
         x = endX;
         y = endY;

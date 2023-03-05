@@ -43,6 +43,18 @@ select{
 #gridA{ grid-area:A; }
 #gridB{ grid-area:B; }
 #gridC{ grid-area:C; }
+#download-txt, #download-svg{
+  margin-left:20px;
+  padding:2px 5px;
+  font-size:12px;
+  font-family:system-ui,sans-serif;
+  text-decoration:none;
+  outline:none;
+  color:var(--CFG1);
+  border:1px solid var(--CA1);
+  border-radius:5px;
+  background:var(--CA2);
+}
 #gridD{ grid-area:D; }
 #grid-wrapper{
   display:grid;
@@ -73,13 +85,15 @@ select{
   background:var(--CBG);
   width:var(--SVG_SIZE);
   height:var(--SVG_SIZE);
+}
+#canvas-svg path{
   stroke:var(--CFG1);
-  stroke-width:1px;
+  stroke-width:10px;
   fill:none;
   stroke-linejoin:round;
   stroke-linecap:round;
 }
-.grid{
+#canvas-svg path.grid{
   stroke:var(--CA2);
 }
 #builtin td{
