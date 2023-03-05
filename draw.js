@@ -30,9 +30,9 @@ const SRC_LotsOfDots = `
 : 2E 2 u E ;
 : 4E 4 u E ;
 : 4N 4 u N ;
-: rstX 50 SetX ;
-: rstY 200 SetY ;
-: rstH 0 SetH ;
+: rstX 50 X= ;
+: rstY 200 Y= ;
+: rstH 0 H= ;
 
 : dot 1 u 360 ArcL ;    # dot
 : a dot 4E 30 L ;       # dot + gap
@@ -50,10 +50,10 @@ f
 const SRC_ArcsTest = `
 # Arcs Test (try size=128x128)
 : u 7 * ;
-: a PU 64 dup SetY over + SetX PD ;
-: b a 270 SetH swap ArcL ;
-: c PU 64 dup SetY over + SetX PD ;
-: d c 90 SetH swap ArcR ;
+: a PU 64 dup Y= over + X= PD ;
+: b a 270 H= swap ArcL ;
+: c PU 64 dup Y= over + X= PD ;
+: d c 90 H= swap ArcR ;
 : e over over b 0.5 u + d ;
 45 8 u e
 90 2 u e
@@ -69,7 +69,7 @@ const SRC_Fibonacci = `
 # Fibonacci Spiral
 : a dup F 90 L ;
 : b 2.1 * a a a a 90 ArcL ;
-364 SetX 321 SetY 90 SetH
+364 X= 321 Y= 90 H=
 1 b
 1 b
 2 b
@@ -106,7 +106,7 @@ const SRC_Sierpinski = `
 : q p l o l p ;
 : s o r p r o ;
 
-5 SetX 468 SetY 0 SetH
+5 X= 468 Y= 0 H=
 0.98 q r s r q
 `.trim();
 
@@ -414,15 +414,15 @@ function drawInterpreter(svgID, initialX, initialY) {
         "PU": function() {
             penDown = false;
         },
-        "SetH": function() {
+        "H=": function() {
             h = stackTop;
             dPop();
         },
-        "SetX": function() {
+        "X=": function() {
             x = stackTop;
             dPop();
         },
-        "SetY": function() {
+        "Y=": function() {
             y = stackTop;
             dPop();
         },
