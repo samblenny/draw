@@ -11,22 +11,25 @@
 /********************************/
 
 /* Editor box code selection dropdown */
-const EDIT_SELECT = document.getElementById("edit-select");
+const EDIT_SELECT = document.querySelector("#edit-select");
 
 /* HTML textarea element that serves as a text editor */
-const EDITOR = document.getElementById("editor");
+const EDITOR = document.querySelector("#editor");
 
 /* SVG canvas-size selection dropdown */
-const CANVAS_SIZE_SELECT = document.getElementById("canvas-size");
+const CANVAS_SIZE_SELECT = document.querySelector("#canvas-size");
+
+/* SVG grid size selection dropdown */
+const CANVAS_GRID_SELECT = document.querySelector("#canvas-grid");
 
 /* HTML SVG element that serves as a canvas */
-const CANVAS_SVG = document.getElementById("canvas-svg");
+const CANVAS_SVG = document.querySelector("#gridD svg");
 
 /* Button to download SVG (actually an <a>, but style is like button) */
-const DOWNLOAD_TXT = document.getElementById("download-txt");
+const DOWNLOAD_TXT = document.querySelector("#download-txt");
 
 /* Button to download SVG (actually an <a>, but style is like button) */
-const DOWNLOAD_SVG = document.getElementById("download-svg");
+const DOWNLOAD_SVG = document.querySelector("#download-svg");
 
 /* Source code for "Lots of Dots" example */
 const SRC_LotsOfDots = `
@@ -125,132 +128,102 @@ var SCRATCH_BUF = "";
 /* Size of SVG canvas (side of square in pixels) */
 var CANVAS_SIZE = 512;
 
+/* Size of grid in pixels */
+var CANVAS_GRID_SIZE = 64;
+
 /* Zoom factor for SVG canvas */
 var CANVAS_ZOOM = 1;
 
 
-/*************/
-/* Init Code */
-/*************/
+/*****************************************/
+/* Data Structures for Colors and Shapes */
+/*****************************************/
 
-/* Initialize interpreter */
-var di = drawInterpreter("canvas_svg");
 
-/* Run the current code in the editor box */
-function evalCode(code) {
-    di.run(code || "");
-}
+// Color Theme with light and dark modes
+class Theme {
 
-/* Set the editor box's text contents */
-function setCode(code) {
-    EDITOR.value = code;
-    di.run(EDITOR.value);
-}
-
-/* Refresh the dataURL href for the .svg download button */
-function updateSvgDownloadButton() {
-    let mime = "image/svg+xml";
-    let data = `data:${mime},${encodeURIComponent(CANVAS_SVG.outerHTML)}`;
-    DOWNLOAD_SVG.setAttribute("href", data);
-}
-
-/* Refresh the dataURL href for the .txt download button */
-function updateTxtDownloadButton() {
-    let mime = "text/plain";
-    let data = `data:${mime},${encodeURIComponent(EDITOR.value)}`;
-    DOWNLOAD_TXT.setAttribute("href", data);
-}
-
-/* Update editor text to match the dropdown selector */
-function updateCodeSelection() {
-    let choice = EDIT_SELECT.value || "";
-    if(PREV_SELECTED == "") {
-        SCRATCH_BUF = EDITOR.value;
+    // Test if browser reports that host OS is set to dark mode
+    static dark() {
+        const s = '(prefers-color-scheme: dark)';
+        return window.matchMedia && window.matchMedia(s).matches;
     }
-    switch(choice) {
-    case "LotsOfDots":
-        setCode(SRC_LotsOfDots);
-        break;
-    case "ArcsTest":
-        setCode(SRC_ArcsTest);
-        break;
-    case "Fibonacci":
-        setCode(SRC_Fibonacci);
-        break;
-    case "Sierpinski":
-        setCode(SRC_Sierpinski);
-        break;
-    default:
-        setCode(SCRATCH_BUF);
+
+    // Getters to be used as: Theme.bg, Theme.fg, Theme.accent
+    static get bg()     { return Theme.dark() ? "#1e1e23" : "#ffffff"; }
+    static get fg()     { return Theme.dark() ? "#eeeeee" : "#000000"; }
+    static get accent() { return Theme.dark() ? "#323232" : "#e7e7e7"; }
+}
+
+
+// SVG Path with configurable stroke and fill colors
+class Path {
+
+    // Default path attributes
+    static defaults = {
+        "stroke-width": "10px",
+        "stroke-linejoin": "round",
+        "stroke-linecap": "round",
+        "fill": "none",
     }
-    PREV_SELECTED = choice;
-    // Refresh the .txt download button data with the new source code
-    updateTxtDownloadButton();
-}
 
-function setCanvasSizeAndZoom() {
-    const scaleFactor = 10;  // SVG coordinates use n.1 fixed point
-    const docRoot = document.documentElement;
-    const minx = -(CANVAS_SIZE * scaleFactor / 2);
-    const miny = minx;
-    const width = CANVAS_SIZE * scaleFactor;
-    const height = width;
-    const viewBox = `${minx} ${miny} ${width} ${height}`;
-    const outer = CANVAS_SIZE * CANVAS_ZOOM;
-    docRoot.style.setProperty("--SVG_SIZE", outer);
-    CANVAS_SVG.setAttribute("width", outer);
-    CANVAS_SVG.setAttribute("height", outer);
-    CANVAS_SVG.setAttribute("viewBox", viewBox);
-    // Refresh the .svg download button data with the new viewBox
-    updateSvgDownloadButton();
-}
-
-/* Update svg size to match the canvas-size dropdown selector */
-function updateCanvasSize() {
-    let choice = CANVAS_SIZE_SELECT.value || "";
-    switch(choice) {
-    case "16":
-        CANVAS_SIZE = 16;
-        CANVAS_ZOOM = 16;
-        break;
-    case "32":
-        CANVAS_SIZE = 32;
-        CANVAS_ZOOM = 16;
-        break;
-    case "64":
-        CANVAS_SIZE = 64;
-        CANVAS_ZOOM = 8;
-        break;
-    case "128":
-        CANVAS_SIZE = 128;
-        CANVAS_ZOOM = 4;
-        break;
-    case "256":
-        CANVAS_SIZE = 256;
-        CANVAS_ZOOM = 2;
-        break;
-    case "512":
-    default:
-        CANVAS_SIZE = 512;
-        CANVAS_ZOOM = 1;
+    constructor(attributes) {
+        // Dictionary to override default stroke, stroke-width, fill, etc.
+        this.attributes = attributes || {};
+        // List path commands for d attribute
+        this.dCommands = [''];
     }
-    setCanvasSizeAndZoom();
+
+    // Append an "M..." (move) path command
+    moveTo(x, y) {
+        // Scale coordinate to svg n.1 fixed point (e.g. 3.1 becomes 31)
+        // This makes svg code smaller by omitting lots and lots of '.'
+        // characters
+        const xScaled = Math.round(x * 10);
+        const yScaled = Math.round(y * 10);
+        this.dCommands.push(`M${xScaled},${yScaled}`);
+    }
+
+    // Append an "L..." (line) path command
+    lineTo(x, y) {
+        const xScaled = Math.round(x * 10);
+        const yScaled = Math.round(y * 10);
+        this.dCommands.push(`L${xScaled},${yScaled}`);
+    }
+
+    // Append an "A..." (arc) path command
+    arcTo(radius, largeArc, sweep, x, y) {
+        const r = Math.round(radius * 10);
+        const xScaled = Math.round(x * 10);
+        const yScaled = Math.round(y * 10);
+        const cmd = `A${r} ${r} 0 ${largeArc} ${sweep} ${xScaled},${yScaled}`;
+        this.dCommands.push(cmd);
+    }
+
+    // Get an SVG path attribute for this path
+    getAttr(key) {
+        const dflt = Path.defaults[key] || "";
+        const attr = this.attributes[key];
+        return attr ? attr : dflt;
+    }
+
+    // Set attributes of SVG element <path> to this path's current state
+    updatePathElement(path) {
+        this.dCommands.push('');  // End with a newline
+        path.setAttribute("d", this.dCommands.join("\n"));
+        // Handle stroke attribute specially to pick up light/dark mode changes
+        const stroke = this.attributes["stroke"] || Theme.fg;
+        path.setAttribute("stroke", stroke);
+        // First set default attribute values, then set custom attribute values
+        // for this path, potentially replacing default values.
+        for(const k of Object.keys(Path.defaults)) {
+            path.setAttribute(k, Path.defaults[k]);
+        }
+        for(const k of Object.keys(this.attributes)) {
+            path.setAttribute(k, this.attributes[k]);
+        }
+    }
 }
-
-/* Register edit box code select handler */
-EDIT_SELECT.addEventListener("change", updateCodeSelection);
-
-/* Register editor box keystroke handler */
-EDITOR.addEventListener("input", () => { evalCode(EDITOR.value); });
-
-/* Register canvas size select handler */
-CANVAS_SIZE_SELECT.addEventListener("change", updateCanvasSize);
-
-/* Initialize the editor box with example code (index.html sets selection) */
-updateCodeSelection();
-
-/* Set the SVG vewBox */
-setCanvasSizeAndZoom();
 
 
 /*************************************/
@@ -261,15 +234,17 @@ function drawInterpreter(svgID) {
     var compileMode, compileName, compileWords, compileOkay;
     var onStack, stackTop, stackSecond, stackPointer, ringBuffer, ringBufferSize;
     var x, y, h, penDown;
-    var newSubpath, traceOn, paths;
-    var svgElement, svgPath;
+    var newSubpath, traceOn, gridPath, strokedPath;
+    var svgElement, GRID, LINES;
     var logLimit;
     var userDict;
 
     svgElement = CANVAS_SVG;
     // The namespace matters! A plain createElement() won't work right.
-    svgPath = document.createElementNS("http://www.w3.org/2000/svg","path");
-    svgElement.appendChild(svgPath);
+    GRID = document.createElementNS("http://www.w3.org/2000/svg","path");
+    svgElement.appendChild(GRID);
+    LINES = document.createElementNS("http://www.w3.org/2000/svg","path");
+    svgElement.appendChild(LINES);
 
     // Interpreter state
     // =====================================================================
@@ -327,7 +302,8 @@ function drawInterpreter(svgID) {
         penDown = true;
         newSubpath = true;
         traceOn = false;
-        paths = [];
+        gridPath = new Path({"stroke": Theme.accent});
+        strokedPath = new Path();
     }
 
 
@@ -475,27 +451,48 @@ function drawInterpreter(svgID) {
 
     // Draw lines
     // =====================================================================
-    function preparePath() {
-        svgPath.setAttribute("d", paths.join("\n"));
-        paths = [];
-        // Refresh the .svg download button data with the new path data
-        updateSvgDownloadButton();
+
+    // Make a grid path
+    function drawGrid(pxSize) {
+        // Skip grid if size is 0 (this happens for grid: "none" selection)
+        if(CANVAS_GRID_SIZE < 1) {
+            return;
+        }
+        const minx = -(CANVAS_SIZE / 2);
+        const miny = minx;
+        const width = CANVAS_SIZE;
+        const height = width;
+        // Adjust stroke witdh inversely proportional to zoom
+        const strokeWidth = `${(20 / CANVAS_ZOOM).toFixed(5)}px`;
+        gridPath.attributes["stroke-width"] = strokeWidth;
+        // Vertical grid lines
+        for(let x = minx; x <= minx + width; x += CANVAS_GRID_SIZE) {
+            gridPath.moveTo(x, miny);
+            gridPath.lineTo(x, miny + height);
+        }
+        // Horizontal grid lines
+        for(let y = miny; y <= miny + width; y += CANVAS_GRID_SIZE) {
+            gridPath.moveTo(minx, y);
+            gridPath.lineTo(minx + width, y);
+        }
     }
 
-    // Scale coordinate to svg n.1 fixed point (e.g. 3.1 becomes 31)
-    // This makes svg code smaller by omitting lots and lots of '.' characters
-    function scale(n) {
-        return Math.round(n * 10);
+    // Update all the svg elements
+    function preparePath() {
+        drawGrid();
+        gridPath.updatePathElement(GRID);
+        strokedPath.updatePathElement(LINES);
+        CANVAS_SVG.style.background = Theme.bg;
     }
 
     function line(x1,y1,x2,y2) {
         // This is the inner loop workhorse for adding line segments
         if(penDown) {
             if(newSubpath) {
-                paths.push(`M${scale(x1)},${scale(y1)}`);
+                strokedPath.moveTo(x1, y1);
                 newSubpath = false;
             }
-            paths.push(`L${scale(x2)},${scale(y2)}`);
+            strokedPath.lineTo(x2, y2);
         }
     }
 
@@ -531,14 +528,12 @@ function drawInterpreter(svgID) {
         // Generate the SVG path segment
         if(penDown) {
             if(newSubpath) {
-                paths.push(`M${scale(x)},${scale(y)}`);
+                strokedPath.moveTo(x, y);
                 newSubpath = false;
             }
-            let r = scale(radius);
             let largeArc = (Math.abs(angle) > 180) ? "1" : "0";
             let sweep = left ? "0" : "1";
-            let endPoint = `${scale(endX)},${scale(endY)}`;
-            paths.push(`A${r} ${r} 0 ${largeArc} ${sweep} ${endPoint}`);
+            strokedPath.arcTo(radius, largeArc, sweep, endX, endY);
         }
         x = endX;
         y = endY;
@@ -744,3 +739,170 @@ function drawInterpreter(svgID) {
 // There's nothing wrong with renaming, but it may cause temporarily problems
 // with the word definitions in the user dictionary while the edit is in
 // progress.
+
+
+/*************/
+/* Init Code */
+/*************/
+
+/* Initialize interpreter */
+var di = drawInterpreter("canvas_svg");
+
+/* Refresh the dataURL href for the .svg download button */
+function updateSvgDownloadButton() {
+    let mime = "image/svg+xml";
+    let data = `data:${mime},${encodeURIComponent(CANVAS_SVG.outerHTML)}`;
+    DOWNLOAD_SVG.setAttribute("href", data);
+}
+
+/* Refresh the dataURL href for the .txt download button */
+function updateTxtDownloadButton() {
+    let mime = "text/plain";
+    let data = `data:${mime},${encodeURIComponent(EDITOR.value)}`;
+    DOWNLOAD_TXT.setAttribute("href", data);
+}
+
+/* Run the current code in the editor box */
+function evalCode() {
+    di.run(EDITOR.value || "");
+    updateTxtDownloadButton();
+    updateSvgDownloadButton();
+}
+
+/* Set the editor box's text contents */
+function setCode(code) {
+    EDITOR.value = code;
+    evalCode();
+}
+
+/* Update editor text to match the dropdown selector */
+function updateCodeSelection() {
+    let choice = EDIT_SELECT.value || "";
+    if(PREV_SELECTED == "") {
+        SCRATCH_BUF = EDITOR.value;
+    }
+    switch(choice) {
+    case "LotsOfDots":
+        setCode(SRC_LotsOfDots);
+        break;
+    case "ArcsTest":
+        setCode(SRC_ArcsTest);
+        break;
+    case "Fibonacci":
+        setCode(SRC_Fibonacci);
+        break;
+    case "Sierpinski":
+        setCode(SRC_Sierpinski);
+        break;
+    default:
+        setCode(SCRATCH_BUF);
+    }
+    PREV_SELECTED = choice;
+}
+
+function setCanvasSizeAndZoom() {
+    const scaleFactor = 10;  // SVG coordinates use n.1 fixed point
+    const docRoot = document.documentElement;
+    const minx = -(CANVAS_SIZE * scaleFactor / 2);
+    const miny = minx;
+    const width = CANVAS_SIZE * scaleFactor;
+    const height = width;
+    const viewBox = `${minx} ${miny} ${width} ${height}`;
+    const outer = CANVAS_SIZE * CANVAS_ZOOM;
+    docRoot.style.setProperty("--SVG_SIZE", outer);
+    CANVAS_SVG.setAttribute("width", outer);
+    CANVAS_SVG.setAttribute("height", outer);
+    CANVAS_SVG.setAttribute("viewBox", viewBox);
+    // Trigger a redraw
+    evalCode();
+}
+
+/* Update svg size to match the #canvas-size dropdown selector */
+function updateCanvasSize() {
+    let choice = CANVAS_SIZE_SELECT.value || "";
+    switch(choice) {
+    case "16":
+        CANVAS_SIZE = 16;
+        CANVAS_ZOOM = 16;
+        break;
+    case "32":
+        CANVAS_SIZE = 32;
+        CANVAS_ZOOM = 16;
+        break;
+    case "64":
+        CANVAS_SIZE = 64;
+        CANVAS_ZOOM = 8;
+        break;
+    case "128":
+        CANVAS_SIZE = 128;
+        CANVAS_ZOOM = 4;
+        break;
+    case "256":
+        CANVAS_SIZE = 256;
+        CANVAS_ZOOM = 2;
+        break;
+    case "512":
+    default:
+        CANVAS_SIZE = 512;
+        CANVAS_ZOOM = 1;
+    }
+    setCanvasSizeAndZoom();
+}
+
+/* Update grid size to match the #canvas-grid dropdown selector */
+function updateGridSize() {
+    let choice = CANVAS_GRID_SELECT.value || "";
+    switch(choice) {
+    case "64":
+        CANVAS_GRID_SIZE = 64;
+        break;
+    case "32":
+        CANVAS_GRID_SIZE = 32;
+        break;
+    case "16":
+        CANVAS_GRID_SIZE = 16;
+        break;
+    case "8":
+        CANVAS_GRID_SIZE = 8;
+        break;
+    case "4":
+        CANVAS_GRID_SIZE = 4;
+        break;
+    case "2":
+        CANVAS_GRID_SIZE = 2;
+        break;
+    case "1":
+        CANVAS_GRID_SIZE = 1;
+        break;
+    default:
+        CANVAS_GRID_SIZE = 0;
+    }
+    // Trigger a redraw
+    evalCode();
+}
+
+/* Register edit box code select handler */
+EDIT_SELECT.addEventListener("change", updateCodeSelection);
+
+/* Register editor box keystroke handler */
+EDITOR.addEventListener("input", evalCode);
+
+/* Register canvas size select handler */
+CANVAS_SIZE_SELECT.addEventListener("change", updateCanvasSize);
+
+/* Register grid size select handler */
+CANVAS_GRID_SELECT.addEventListener("change", updateGridSize);
+
+// Register handler to redraw for OS color scheme (dark mode) settings changes
+if(window.matchMedia) {
+    const dark = "(prefers-color-scheme: dark)";
+    const light = "(prefers-color-scheme: light)";
+    window.matchMedia(dark).addListener(evalCode);
+    window.matchMedia(light).addListener(evalCode);
+}
+
+/* Initialize the editor box with example code (index.html sets selection) */
+updateCodeSelection();
+
+/* Set the SVG vewBox */
+setCanvasSizeAndZoom();

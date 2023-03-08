@@ -40,6 +40,7 @@ select{
   display:inline-block;
   margin:5px 0;
 }
+label{margin-right:5px;}
 #gridA{ grid-area:A; }
 #gridB{ grid-area:B; }
 #gridC{ grid-area:C; }
@@ -76,25 +77,14 @@ select{
   width:var(--EDIT_WIDE);
   padding:7px;
 }
-#canvas-svg{
+#gridD svg{
   display:inline-block;
   box-sizing:content-box; /* don't let border mess up content scaling */
   margin:0;
   border:1px solid var(--CA1);
-  color:var(--CFG1);
   background:var(--CBG);
   width:var(--SVG_SIZE);
   height:var(--SVG_SIZE);
-}
-#canvas-svg path{
-  stroke:var(--CFG1);
-  stroke-width:10px;
-  fill:none;
-  stroke-linejoin:round;
-  stroke-linecap:round;
-}
-#canvas-svg path.grid{
-  stroke:var(--CA2);
 }
 #builtin td{
   border:1px solid var(--CA1);
