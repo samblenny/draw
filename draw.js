@@ -161,10 +161,14 @@ class Path {
 
     // Default path attributes
     static defaults = {
-        "stroke-width": "10px",
-        "stroke-linejoin": "round",
-        "stroke-linecap": "round",
+        "stroke-width": "1px",
         "fill": "none",
+    }
+
+    // Format a number to balance precision with compactness for an SVG path
+    static formatNum(n) {
+        const regexTrimTrailingZeros = /\.?0*$/;
+        return n.toFixed(3).replace(regexTrimTrailingZeros, '');
     }
 
     constructor(attributes) {
@@ -179,23 +183,23 @@ class Path {
         // Scale coordinate to svg n.1 fixed point (e.g. 3.1 becomes 31)
         // This makes svg code smaller by omitting lots and lots of '.'
         // characters
-        const xScaled = Math.round(x * 10);
-        const yScaled = Math.round(y * 10);
+        const xScaled = Path.formatNum(x);
+        const yScaled = Path.formatNum(y);
         this.dCommands.push(`M${xScaled},${yScaled}`);
     }
 
     // Append an "L..." (line) path command
     lineTo(x, y) {
-        const xScaled = Math.round(x * 10);
-        const yScaled = Math.round(y * 10);
+        const xScaled = Path.formatNum(x);
+        const yScaled = Path.formatNum(y);
         this.dCommands.push(`L${xScaled},${yScaled}`);
     }
 
     // Append an "A..." (arc) path command
     arcTo(radius, largeArc, sweep, x, y) {
-        const r = Math.round(radius * 10);
-        const xScaled = Math.round(x * 10);
-        const yScaled = Math.round(y * 10);
+        const r = Path.formatNum(radius);
+        const xScaled = Path.formatNum(x);
+        const yScaled = Path.formatNum(y);
         const cmd = `A${r} ${r} 0 ${largeArc} ${sweep} ${xScaled},${yScaled}`;
         this.dCommands.push(cmd);
     }
@@ -302,8 +306,15 @@ function drawInterpreter(svgID) {
         penDown = true;
         newSubpath = true;
         traceOn = false;
-        gridPath = new Path({"stroke": Theme.accent});
-        strokedPath = new Path();
+        gridPath = new Path({
+            "stroke": Theme.accent,
+            "shape-rendering": "crispEdges",
+            "stroke-linecap": "square",
+        });
+        strokedPath = new Path({
+            "stroke-linejoin": "round",
+            "stroke-linecap": "round",
+        });
     }
 
 
@@ -463,7 +474,7 @@ function drawInterpreter(svgID) {
         const width = CANVAS_SIZE;
         const height = width;
         // Adjust stroke witdh inversely proportional to zoom
-        const strokeWidth = `${(20 / CANVAS_ZOOM).toFixed(5)}px`;
+        const strokeWidth = `${(1 / CANVAS_ZOOM).toFixed(5)}px`;
         gridPath.attributes["stroke-width"] = strokeWidth;
         // Vertical grid lines
         for(let x = minx; x <= minx + width; x += CANVAS_GRID_SIZE) {
@@ -801,11 +812,10 @@ function updateCodeSelection() {
 }
 
 function setCanvasSizeAndZoom() {
-    const scaleFactor = 10;  // SVG coordinates use n.1 fixed point
     const docRoot = document.documentElement;
-    const minx = -(CANVAS_SIZE * scaleFactor / 2);
+    const minx = -(CANVAS_SIZE / 2);
     const miny = minx;
-    const width = CANVAS_SIZE * scaleFactor;
+    const width = CANVAS_SIZE;
     const height = width;
     const viewBox = `${minx} ${miny} ${width} ${height}`;
     const outer = CANVAS_SIZE * CANVAS_ZOOM;
